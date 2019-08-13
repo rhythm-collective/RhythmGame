@@ -3,6 +3,8 @@
 <input type="file" accept=".sm" id="upload" value="Upload From Computer"><br>
 <input type="button" value="Parse" onclick="go()">
 </body>
+<script src="test.js"></script>
+<script src="test_cases/felyslong/felyslong.js"></script>
 <script>
 var reader;
 function go() {
@@ -10,11 +12,64 @@ function go() {
 	let file = upload.files[0];
 	reader = new FileReader()
 	reader.readAsText(file);
-	reader.addEventListener('loadend', printResult);
+	reader.addEventListener('loadend', parse);
 }
 
-function printResult() {
-	reader.result.split("\n").map(e => e.trim());
+function parse() {
+	let file = reader.result;
+	let metaData = parseMetaData(file);
+	console.log(metaData);
+}
+
+function parseMetaData(file) {
+	let metaData = parseMainMetaDataTags(file);
+	metaData["BPMS"] = parseBPMS(metaData["BPMS"]);
+	metaData["NOTES"] = parseModesAndDifficulties(file);
+	return metaData;
+}
+
+function parseMainMetaDataTags(file) {
+	// match any metadata tag excluding the "NOTES" tag (case-insensitive)
+	let re = /#(?![nN][oO][tT][eE][sS])([^:]+):([^;]+);/g;
+	let matches = [...file.matchAll(re)];
+	let metaData = {};
+	for(let i = 0; i < matches.length; i++) {
+		let match = matches[i];
+		metaData[cleanMetaDataString(match[1]).toUpperCase()] = cleanMetaDataString(match[2]);
+	}
+	return metaData;
+}
+
+function parseBPMS(bpmString) {
+	let bpmArray = bpmString.split(",").map(e => e.trim().split("="));
+	let bpms = [];
+	for(let i = 0; i < bpmArray.length; i++) {
+		bpms.push({beat: bpmArray[i][0], bpm: bpmArray[i][1]});
+	}
+	return bpms;
+}
+
+function parseModesAndDifficulties(file) {
+	// Get "NOTES" sections (case-insensitive). The first five values are postfixed with a colon.
+	// Note data comes last, postfixed by a semicolon.
+	let re = /#[nN][oO][tT][eE][sS]:([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^;]+);/g;
+	let matches = [...file.matchAll(re)];
+	let modesAndDifficulties = [];
+	let fieldNames = ["type", "desc/author", "difficulty", "meter", "radar"]
+	for(let i = 0; i < matches.length; i++) {
+		let match = matches[i];
+		let mode = {};
+		for(let j = 1; j < match.length-1; j++) {
+			mode[fieldNames[j-1]] = cleanMetaDataString(match[j]);
+		}
+		mode["notes"] = match[match.length - 1];
+		modesAndDifficulties.push(mode);
+	}
+	return modesAndDifficulties;
+}
+
+function cleanMetaDataString(string) {
+	return string.trim().replace(/\n/g,"");
 }
 </script>
 </html>
