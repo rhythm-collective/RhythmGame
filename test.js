@@ -11,3 +11,17 @@ function runTests(parse) {
 function getTest() {
 	return felyslong.split("\n").map(e => e.trim());
 }
+
+function modeTest() {
+	let modes = [
+	{type:"dance-solo", difficulty:"Easy", meter: 4},
+	{type:"dance-single", difficulty:"Easy", meter: 5},
+	{type:"dance-solo", difficulty:"Hard", meter: 15},
+	{type:"dance-single", difficulty:"Hard", meter: 8},
+	{type:"dance-solo", difficulty:"Medium", meter: 8},
+	{type:"dance-single", difficulty:"Medium", meter: 6},
+	{type:"dance-solo", difficulty:"Edit", meter: 20},
+	{type:"dance-single", difficulty:"Challenge", meter: 12}
+	];
+	console.log(getModeOptions({NOTES: modes}));
+}

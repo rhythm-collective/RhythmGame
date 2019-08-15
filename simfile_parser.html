@@ -1,24 +1,34 @@
 <html>
 <body>
-<input type="file" accept=".sm" id="upload" value="Upload From Computer"><br>
-<input type="button" value="Parse" onclick="go()">
+<input type="file" accept=".sm" id="upload" value="Upload From Computer" onclick="clearStartedParse()"><br>
+<input type="button" value="Start Parse" onclick="go()"><br>
+<span id="finish-parse-section"></span>
 </body>
 <script src="test.js"></script>
 <script src="test_cases/felyslong/felyslong.js"></script>
 <script>
 var reader;
+var startedParse;
+
+function clearStartedParse() {
+	document.getElementById("finish-parse-section").innerHTML = "";
+	startedParse = undefined;
+}
+
 function go() {
 	let upload = document.getElementById("upload");
 	let file = upload.files[0];
 	reader = new FileReader()
 	reader.readAsText(file);
-	reader.addEventListener('loadend', parse);
+	reader.addEventListener('loadend', startParse);
 }
 
-function parse() {
+function startParse() {
 	let file = reader.result;
-	let metaData = parseMetaData(file);
-	console.log(metaData);
+	startedParse = parseMetaData(file);
+	console.log(startedParse);
+	let modeOptions = getModeOptions(startedParse);
+	showModeOptions(modeOptions);
 }
 
 function parseMetaData(file) {
@@ -52,7 +62,7 @@ function parseBPMS(bpmString) {
 function parseModesAndDifficulties(file) {
 	// Get "NOTES" sections (case-insensitive). The first five values are postfixed with a colon.
 	// Note data comes last, postfixed by a semicolon.
-	let re = /#[nN][oO][tT][eE][sS]:([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^;]+);/g;
+	let re = /#[nN][oO][tT][eE][sS]:([^:]*):([^:]*):([^:]*):([^:]*):([^:]*):([^;]+;)/g;
 	let matches = [...file.matchAll(re)];
 	let modesAndDifficulties = [];
 	let fieldNames = ["type", "desc/author", "difficulty", "meter", "radar"]
@@ -70,6 +80,127 @@ function parseModesAndDifficulties(file) {
 
 function cleanMetaDataString(string) {
 	return string.trim().replace(/\n/g,"");
+}
+
+function getModeOptions(metaData) {
+	let modes = metaData["NOTES"];
+	let modeOptions = [];
+	for(let i = 0; i < modes.length; i++) {
+		let mode = modes[i];
+		modeOptions.push({type: mode["type"], difficulty: mode["difficulty"], meter: mode["meter"], id: i});
+	}
+	modeOptions.sort(compareModeOptions);
+	return modeOptions;
+}
+
+function compareModeOptions(a, b) {
+	let typeA = a.type.toUpperCase();
+	let typeB = b.type.toUpperCase();
+	if (typeA != typeB) {
+		if(typeA < typeB) {
+			return -1;
+		}
+		else {
+			return 1;
+		}
+	}
+	else {
+		let difficultyA = a.difficulty.toUpperCase();
+		let difficultyB = b.difficulty.toUpperCase();
+		if(difficultyA != difficultyB) {
+			return difficultyRank(difficultyA) - difficultyRank(difficultyB);
+		}
+		else {
+			let meterA = parseFloat(a.meter);
+			let meterB = parseFloat(b.meter);
+			if(meterA != meterB) {
+				return meterA - meterB;
+			}
+		}
+	}
+	return a.id = b.id;
+}
+
+function difficultyRank(difficulty) {
+	switch(difficulty) {
+		case "BEGINNER":
+			return 0
+		case "EASY":
+			return 1;
+		case "MEDIUM":
+			return 2;
+		case "HARD":
+			return 3;
+		case "CHALLENGE":
+			return 4;
+		case "EDIT":
+			return 5;
+		default:
+			return 6;
+	}
+}
+
+function showModeOptions(modeOptions) {
+	let modeSelect = document.getElementById("finish-parse-section");
+	let html = 'Choose a mode: <select id="mode-select">\n' +
+		'<option hidden disabled selected value></option>\n';
+	for(let i = 0; i < modeOptions.length; i++) {
+		let mode = modeOptions[i];
+		html += '<option value="' + mode["id"] + '">' +
+			mode["type"] + ', ' + mode["difficulty"] + ', ' + mode["meter"] +
+			'</option>\n';
+	}
+	html += '</select><br>\n';
+	html += getFinishParseButton();
+	modeSelect.innerHTML = html;
+}
+
+function getFinishParseButton() {
+	return '<input type="button" value="Finish Parse" onclick="finishParse()"><br>';
+}
+
+function finishParse() {
+	let selectedMode = document.getElementById("mode-select").value;
+	let unparsedNotes = startedParse["NOTES"][selectedMode]["notes"];
+	let unparsedArray = unparsedNotes.split("\n");
+	let measures = getMeasures(unparsedArray);
+	console.log(measures);
+}
+
+function getMeasures(unparsedArray) {
+	let measures = [];
+	let state = 0;
+	let i = 0;
+	let currentMeasure = [];
+	while(i < unparsedArray.length) {
+		let currentLine = unparsedArray[i];
+		switch(state) {
+			case 0:
+				if(!currentLine.includes("//") && currentLine.trim() !== "") {
+					state = 1;
+				}
+				else {
+					i++;
+				}
+				break;
+			case 1:
+				if(!currentLine.includes(",") && !currentLine.includes(";") && currentLine.trim() !== "") {
+					currentMeasure.push(currentLine.trim());
+					i++;
+				}
+				else {
+					state = 2;
+				}
+				break;
+			case 2:
+				measures.push(currentMeasure);
+				currentMeasure = [];
+				i++;
+				state = 0;
+				break;
+		}
+	}
+	return measures;
 }
 </script>
 </html>
