@@ -20,20 +20,25 @@ function go() {
 	let file = upload.files[0];
 	reader = new FileReader()
 	reader.readAsText(file);
-	reader.addEventListener('loadend', startParse);
+	reader.addEventListener('loadend', onFileLoaded);
 }
 
-function startParse() {
+function onFileLoaded() {
 	let file = reader.result;
+	startParse(file);
+}
+
+function startParse(file) {
 	startedParse = parseMetaData(file);
 	console.log(startedParse);
-	let modeOptions = getModeOptions(startedParse);
+	let modeOptions = getModeOptionsForDisplay(startedParse);
 	showModeOptions(modeOptions);
 }
 
 function parseMetaData(file) {
 	let metaData = parseMainMetaDataTags(file);
 	metaData["BPMS"] = parseBPMS(metaData["BPMS"]);
+	parseNumericalTags(metaData);
 	metaData["NOTES"] = parseModesAndDifficulties(file);
 	return metaData;
 }
@@ -54,9 +59,19 @@ function parseBPMS(bpmString) {
 	let bpmArray = bpmString.split(",").map(e => e.trim().split("="));
 	let bpms = [];
 	for(let i = 0; i < bpmArray.length; i++) {
-		bpms.push({beat: bpmArray[i][0], bpm: bpmArray[i][1]});
+		bpms.push({beat: parseFloat(bpmArray[i][0]), bpm: parseFloat(bpmArray[i][1])});
 	}
 	return bpms;
+}
+
+function parseNumericalTags(metaData) {
+	metaData["OFFSET"] = parseFloat(metaData["OFFSET"]);
+	if(metaData["SAMPLELENGTH"]) {
+		metaData["SAMPLELENGTH"] = parseFloat(metaData["SAMPLELENGTH"]);
+	}
+	if(metaData["SAMPLESTART"]) {
+		metaData["SAMPLESTART"] = parseFloat(metaData["SAMPLESTART"]);
+	}
 }
 
 function parseModesAndDifficulties(file) {
@@ -82,7 +97,7 @@ function cleanMetaDataString(string) {
 	return string.trim().replace(/\n/g,"");
 }
 
-function getModeOptions(metaData) {
+function getModeOptionsForDisplay(metaData) {
 	let modes = metaData["NOTES"];
 	let modeOptions = [];
 	for(let i = 0; i < modes.length; i++) {
@@ -164,7 +179,11 @@ function finishParse() {
 	let unparsedNotes = startedParse["NOTES"][selectedMode]["notes"];
 	let unparsedArray = unparsedNotes.split("\n");
 	let measures = getMeasures(unparsedArray);
+	let beatsAndLines = getBeatInfoByLine(measures);
+	let timesBeatsAndLines = getTimeInfoByLine(beatsAndLines, startedParse["OFFSET"], startedParse["BPMS"]);
 	console.log(measures);
+	console.log(beatsAndLines);
+	console.log(timesBeatsAndLines);
 }
 
 function getMeasures(unparsedArray) {
@@ -201,6 +220,64 @@ function getMeasures(unparsedArray) {
 		}
 	}
 	return measures;
+}
+
+// assumes 4/4 time signature
+// TODO: avoid adding fractional beats together?
+function getBeatInfoByLine(measures) {
+	beatsAndLines = [];
+	let currentBeat = 0;
+	for(let i = 0; i < measures.length; i++) {
+		let measure = measures[i];
+		for(let j = 0; j < measure.length; j++) {
+			beatsAndLines.push({beat: currentBeat, lineInfo: measure[j]});
+			currentBeat += 4 / measure.length;
+		}
+	}
+	return beatsAndLines;
+}
+
+function getTimeInfoByLine(infoByLine, offset, bpms) {
+	let currentTime = -offset;
+	infoByLine[0].time = currentTime;
+	for(let i = 1; i < infoByLine.length; i++) {
+		let startBeat = infoByLine[i-1].beat;
+		let endBeat = infoByLine[i].beat;
+		currentTime += getElapsedTime(startBeat, endBeat, bpms);
+		infoByLine[i].time = currentTime;
+	}
+	return infoByLine;
+}
+
+function getElapsedTime(startBeat, endBeat, bpms) {
+	let currentBPMIndex = getStartBPMIndex(startBeat, bpms);
+	let earliestBeat = startBeat;
+	let elapsedTime = 0;
+	do {
+		let nextBPMChange = getNextBPMChange(currentBPMIndex, bpms);
+		let nextBeat = Math.min(endBeat, nextBPMChange);
+		elapsedTime += (nextBeat - earliestBeat) / bpms[currentBPMIndex].bpm * 60;
+		earliestBeat = nextBeat;
+		currentBPMIndex++;
+	} while(earliestBeat < endBeat);
+	return elapsedTime;
+}
+
+function getStartBPMIndex(startBeat, bpms) {
+	let startBPMIndex = 0;
+	for(let i = 1; i < bpms.length; i++) {
+		if(bpms[i].beat < startBeat) {
+			startBPMIndex = i;
+		}
+	}
+	return startBPMIndex;
+}
+
+function getNextBPMChange(currentBPMIndex, bpms) {
+	if(currentBPMIndex + 1 < bpms.length) {
+		return bpms[currentBPMIndex + 1].beat;
+	}
+	return Number.POSITIVE_INFINITY;
 }
 </script>
 </html>
