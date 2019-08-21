@@ -1,15 +1,18 @@
-function runTests(parse) {
-	let test_case = getTest();
-	let notes = parse.notes;
+function runTest(fileText, expectedTimes) {
+	let times = getNoteTimesForMode(3, parseMetaData(fileText)).map(o => o.time);
 	let result = true;
-	for(let i = 1; i < test_case.length; i++) {
-		result = result && (notes[notes.length - i] == test_case[i])
+	for(let i = 0; i < expectedTimes.length; i++) {
+		result = result && (Math.abs(times[times.length - i - 1] - expectedTimes[i]) < 0.0001);
 	}
 	console.log("Test completed with result " + (result ? "PASS" : "FAIL"));
 }
 
-function getTest() {
+function getFelyslongTest() {
 	return felyslong.split("\n").map(e => e.trim());
+}
+
+function getChaozAirflowTest() {
+	return [122.084];
 }
 
 function modeTest() {
