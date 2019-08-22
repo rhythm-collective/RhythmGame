@@ -6,6 +6,7 @@
 <span id="result-box-section"></span>
 <span id="graphical-display-section"></span>
 </body>
+<script src="display.js"></script>
 <script src="parsing.js"></script>
 <script src="test.js"></script>
 <script src="test_cases/felyslong/felyslong.js"></script>
@@ -128,10 +129,12 @@ function showParseInTextbox(parse) {
 		JSON.stringify(parse) + '>';
 }
 
+//drawParse();
+
 function drawParse(timesBeatsAndLines) {
 	document.getElementById("graphical-display-section").innerHTML =
-		'<canvas id="canvas"></canvas>';
-	prepareDisplay();
+		'<br><canvas id="canvas" onScroll="scrollDisplay()"></canvas>';
+	prepareDisplay(timesBeatsAndLines);
 }
 </script>
 </html>
