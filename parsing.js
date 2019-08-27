@@ -3,6 +3,9 @@
 function parseMetaData(file) {
 	let metaData = parseMainMetaDataTags(file);
 	metaData["BPMS"] = parseBPMS(metaData["BPMS"]);
+	if(metaData["STOPS"] != null) {
+		metaData["STOPS"] = parseStops(metaData["STOPS"]);
+	}
 	parseNumericalTags(metaData);
 	metaData["NOTES"] = parseModesAndDifficulties(file);
 	return metaData;
@@ -21,12 +24,29 @@ function parseMainMetaDataTags(file) {
 }
 
 function parseBPMS(bpmString) {
-	let bpmArray = bpmString.split(",").map(e => e.trim().split("="));
+	let bpmArray = parseFloatEqualsFloatPattern(bpmString);
 	let bpms = [];
 	for(let i = 0; i < bpmArray.length; i++) {
-		bpms.push({beat: parseFloat(bpmArray[i][0]), bpm: parseFloat(bpmArray[i][1])});
+		bpms.push({beat: bpmArray[i][0], bpm: bpmArray[i][1]});
 	}
 	return bpms;
+}
+
+function parseStops(stopsString) {
+	let stopsArray = parseFloatEqualsFloatPattern(stopsString);
+	let stops = [];
+	for(let i = 0; i < stopsArray.length; i++) {
+		stops.push({beat: stopsArray[i][0], stopDuration: stopsArray[i][1]});
+	}
+	return stops;
+}
+
+function parseFloatEqualsFloatPattern(string) {
+	let array = string.split(",").map(e => e.trim().split("="));
+	for(let i = 0; i < array.length; i++) {
+		array[i] = [parseFloat(array[i][0]), parseFloat(array[i][1])];
+	}
+	return array;
 }
 
 function parseNumericalTags(metaData) {
@@ -71,8 +91,9 @@ function getNoteTimesForMode(modeIndex, startedParse) {
 	let beatsAndLines = getBeatInfoByLine(measures);
 	let cleanedBeatsAndLines = removeBlankLines(beatsAndLines);
 	let timesBeatsAndLines = getTimeInfoByLine(cleanedBeatsAndLines, 
-		startedParse["OFFSET"], startedParse["BPMS"]);
-	return timesBeatsAndLines;
+		startedParse["OFFSET"], startedParse["BPMS"], startedParse["STOPS"]);
+	let tracks = getTracksFromLines(timesBeatsAndLines);
+	return tracks;
 }
 
 function getMeasures(unparsedArray) {
@@ -145,22 +166,22 @@ function isAllZeros(string) {
 	return true;
 }
 
-function getTimeInfoByLine(infoByLine, offset, bpms) {
-	let currentTime = -offset + getElapsedTime(0, infoByLine[0].beat, bpms);
+function getTimeInfoByLine(infoByLine, offset, bpms, stops) {
+	let currentTime = -offset + getElapsedTime(0, infoByLine[0].beat, bpms, stops);
 	infoByLine[0].time = currentTime;
 	for(let i = 1; i < infoByLine.length; i++) {
 		let startBeat = infoByLine[i-1].beat;
 		let endBeat = infoByLine[i].beat;
-		currentTime += getElapsedTime(startBeat, endBeat, bpms);
+		currentTime += getElapsedTime(startBeat, endBeat, bpms, stops);
 		infoByLine[i].time = currentTime;
 	}
 	return infoByLine;
 }
 
-function getElapsedTime(startBeat, endBeat, bpms) {
+function getElapsedTime(startBeat, endBeat, bpms, stops) {
 	let currentBPMIndex = getStartBPMIndex(startBeat, bpms);
 	let earliestBeat = startBeat;
-	let elapsedTime = 0;
+	let elapsedTime = stops == null ? 0 : stoppedTime(startBeat, endBeat, stops);
 	do {
 		let nextBPMChange = getNextBPMChange(currentBPMIndex, bpms);
 		let nextBeat = Math.min(endBeat, nextBPMChange);
@@ -181,9 +202,40 @@ function getStartBPMIndex(startBeat, bpms) {
 	return startBPMIndex;
 }
 
+// does NOT snap to nearest 1/192nd of beat
+function stoppedTime(startBeat, endBeat, stops) {
+	let currentBeat = startBeat;
+	let time = 0;
+	for(let i = 0; i < stops.length; i++) {
+		let stopBeat = stops[i].beat;
+		if(startBeat <= stopBeat && stopBeat < endBeat) {
+			time += stops[i].stopDuration;
+		}
+	}
+	return time;
+}
+
 function getNextBPMChange(currentBPMIndex, bpms) {
 	if(currentBPMIndex + 1 < bpms.length) {
 		return bpms[currentBPMIndex + 1].beat;
 	}
 	return Number.POSITIVE_INFINITY;
+}
+
+function getTracksFromLines(timesBeatsAndLines) {
+	let numTracks = timesBeatsAndLines[0].lineInfo.length;
+	let tracks = [];
+	for(let i = 0; i < numTracks; i++) {
+		tracks.push([]);
+	}
+	for(let i = 0; i < timesBeatsAndLines.length; i++) {
+		let line = timesBeatsAndLines[i];
+		for(let j = 0; j < line.lineInfo.length; j++) {
+			let noteType = line.lineInfo.charAt(j);
+			if(noteType !== "0") {
+				tracks[j].push({beat: line.beat, type: noteType, time: line.time});
+			}
+		}
+	}
+	return tracks;
 }

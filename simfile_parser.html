@@ -117,10 +117,10 @@ function getFinishParseButton() {
 
 function finishParse() {
 	let selectedMode = document.getElementById("mode-select").value;
-	let timesBeatsAndLines = getNoteTimesForMode(selectedMode, localStartedParse);
-	console.log(timesBeatsAndLines);
-	showParseInTextbox(timesBeatsAndLines);
-	drawParse(timesBeatsAndLines);
+	let tracks = getNoteTimesForMode(selectedMode, localStartedParse);
+	console.log(tracks);
+	//showParseInTextbox(tracks);
+	drawParse(tracks);
 }
 
 function showParseInTextbox(parse) {
@@ -131,10 +131,10 @@ function showParseInTextbox(parse) {
 
 //drawParse();
 
-function drawParse(timesBeatsAndLines) {
+function drawParse(tracks) {
 	document.getElementById("graphical-display-section").innerHTML =
 		'<br><canvas id="canvas" onScroll="scrollDisplay()"></canvas>';
-	prepareDisplay(timesBeatsAndLines);
+	prepareDisplay(tracks);
 }
 </script>
 </html>

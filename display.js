@@ -1,10 +1,10 @@
 var canvas;
 
-function prepareDisplay(timesBeatsAndLines) {
+function prepareDisplay(tracks) {
 	canvas = document.getElementById("canvas");
 	canvas.height = 600;
 	canvas.width = 400;
-	let noteManager = new NoteManager(timesBeatsAndLines, 6);
+	let noteManager = new NoteManager(tracks, 6);
 	noteManager.drawNotes();
 	canvas.addEventListener("wheel", e => noteManager.canvasScrolled(e));
 }
@@ -20,8 +20,8 @@ function Note(x_, y_) {
 	}
 }
 
-function NoteManager(timesBeatsAndLines_, initialTime) {
-	this.timesBeatsAndLines = timesBeatsAndLines_;
+function NoteManager(tracks_, initialTime) {
+	this.tracks = tracks_;
 	this.secondsPerPixel = 0.005;
 	this.currentTime = initialTime;
 	
@@ -35,10 +35,41 @@ function NoteManager(timesBeatsAndLines_, initialTime) {
 		this.clear();
 		let leastTime = this.getLeastTime(this.currentTime);
 		let greatestTime = this.getGreatestTime(leastTime);
-		let lineIndices = this.getFirstAndLastLines(leastTime, greatestTime);
-		for(let i = lineIndices.start; i <= lineIndices.stop; i++) {
-			this.drawAllNotesInLine(this.timesBeatsAndLines[i], this.currentTime);
+		for(let i = 0; i < this.tracks.length; i++) {
+			this.drawNotesInTrack(leastTime, greatestTime, this.tracks[i], i,
+								  this.tracks.length, this.currentTime);
 		}
+	}
+	
+	this.drawNotesInTrack = function(leastTime, greatestTime, track, trackNumber,
+									 numTracks, currentTime) {
+		let bounds = this.getFirstAndLastNotes(leastTime, greatestTime, track);
+		for(let i = bounds.start; i <= bounds.stop; i++) {
+			if(track[i].type === "1") {
+				let x = this.getNoteX(trackNumber, numTracks);
+				let y = this.getNoteY(track[i].time, currentTime);
+				new Note(x, y).draw();
+			}
+		}
+	}
+	
+	//TODO: properly indicate when there are NO notes to draw
+	this.getFirstAndLastNotes = function(leastTime, greatestTime, track) {
+		let i;
+		for(i = 0; i < track.length; i++) {
+			if(track[i].time > leastTime) {
+				break;
+			}
+		}
+		i = Math.max(0, i - 1);
+		let j;
+		for(j = i; j < track.length; j++) {
+			if(track[j].time > greatestTime) {
+				break;
+			}
+		}
+		j = Math.max(0, j - 1);
+		return {start: i, stop: j};
 	}
 	
 	this.clear = function() {
@@ -52,35 +83,6 @@ function NoteManager(timesBeatsAndLines_, initialTime) {
 	
 	this.getGreatestTime = function(leastTime) {
 		return leastTime + canvas.height * this.secondsPerPixel;
-	}
-	
-	this.getFirstAndLastLines = function(leastTime, greatestTime) {
-		let i;
-		for(i = 0; i < this.timesBeatsAndLines.length; i++) {
-			if(this.timesBeatsAndLines[i].time > leastTime) {
-				break;
-			}
-		}
-		i = Math.max(0, i - 1);
-		let j;
-		for(j = i; j < this.timesBeatsAndLines.length; j++) {
-			if(this.timesBeatsAndLines[j].time > greatestTime) {
-				break;
-			}
-		}
-		j = Math.max(0, j - 1);
-		return {start: i, stop: j};
-	}
-	
-	this.drawAllNotesInLine = function(line, currentTime) {
-		let lineString = line.lineInfo;
-		for(let i = 0; i < lineString.length; i++) {
-			if(lineString.charAt(i) !== "0") {
-				let x = this.getNoteX(i, lineString.length);
-				let y = this.getNoteY(line.time, currentTime);
-				new Note(x, y).draw();
-			}
-		}
 	}
 	
 	this.getNoteX = function(trackNumber, numTracks) {
