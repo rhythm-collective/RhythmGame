@@ -1,6 +1,6 @@
 /// <reference path="index.ts" />
 /// <reference path="parsing.ts" />
-// noinspection JSUnusedLocalSymbols
+// noinspection JSUnusedLocalSymbols,JSUnusedGlobalSymbols
 function runTest(fileText, expectedTimes) {
     let times = getNoteTimesForMode(3, parseMetaData(fileText)).map(o => o.time);
     let result = true;
@@ -9,11 +9,11 @@ function runTest(fileText, expectedTimes) {
     }
     console.log("Test completed with result " + (result ? "PASS" : "FAIL"));
 }
-// noinspection JSUnusedLocalSymbols
+// noinspection JSUnusedLocalSymbols,JSUnusedGlobalSymbols
 function getChaozAirflowTest() {
     return [122.084];
 }
-// noinspection JSUnusedLocalSymbols
+// noinspection JSUnusedLocalSymbols,JSUnusedGlobalSymbols
 function modeTest() {
     let modes = [
         { type: "dance-solo", difficulty: "Easy", meter: 4 },
