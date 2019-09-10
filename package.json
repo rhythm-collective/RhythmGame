@@ -1,0 +1,19 @@
+{
+  "name": "simparser",
+  "verson": "1.20190909",
+  "author": "Trumpet63",
+  "license": "CC-BY-4.0",
+  "description": "SM file parser",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Trumpet63-stream/SimParser"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^3.4.3"
+  }
+}
