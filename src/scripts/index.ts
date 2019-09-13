@@ -4,19 +4,29 @@ import {getNoteTimesForMode, parseMetaData} from "./parsing";
 let reader: FileReader;
 let localStartedParse: Object;
 
+export function parseFile(
+  file: File,
+  listener: (this: FileReader, ev: ProgressEvent<FileReader>) => any,
+  options?: boolean | AddEventListenerOptions
+) {
+  reader = new FileReader();
+  reader.readAsText(file);
+  reader.addEventListener("loadend", listener, options);
+}
+
 // noinspection JSUnusedGlobalSymbols,JSUnusedLocalSymbols
 export function clearStartedParse() {
-    document.getElementById("finish-parse-section").innerHTML = "";
-    localStartedParse = undefined;
+  document.getElementById("finish-parse-section").innerHTML = "";
+  localStartedParse = undefined;
 }
 
 // noinspection JSUnusedLocalSymbols
 export function go() {
-    let upload: HTMLInputElement = <HTMLInputElement> document.getElementById("upload");
-    let file: File = upload.files[0];
-    reader = new FileReader();
-    reader.readAsText(file);
-    reader.addEventListener('loadend', onFileLoaded);
+  let upload: HTMLInputElement = <HTMLInputElement>(
+    document.getElementById("upload")
+  );
+  let file: File = upload.files[0];
+  parseFile(file, onFileLoaded);
 }
 
 function onFileLoaded() {
