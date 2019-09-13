@@ -1,5 +1,5 @@
-/// <reference path="index.ts" />
-/// <reference path="parsing.ts" />
+import getModeOptionsForDisplay from "./index";
+import {getNoteTimesForMode, parseMetaData} from "./parsing";
 
 // noinspection JSUnusedLocalSymbols,JSUnusedGlobalSymbols
 function runTest(fileText, expectedTimes) {

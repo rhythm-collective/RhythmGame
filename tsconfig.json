@@ -1,14 +1,13 @@
 {
   "compilerOptions": {
-    "module": "none",
-    "target": "es2020",
+    "outDir": "./dist/",
     "sourceMap": true,
-    "outDir": "build"
+    "noImplicitAny": true,
+    "module": "es6",
+    "target": "es2020",
+    "jsx": "react",
+    "allowJs": true
   },
-  "exclude": [
-    "node_modules"
-  ],
-  "include": [
-    "src/scripts/**/*"
-  ]
+  "exclude": ["node_modules"],
+  "include": ["src/scripts/**/*"]
 }

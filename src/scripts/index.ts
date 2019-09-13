@@ -1,4 +1,5 @@
-/// <reference path="parsing.ts" />
+import {prepareDisplay} from "./display";
+import {getNoteTimesForMode, parseMetaData} from "./parsing";
 
 let reader: FileReader;
 let localStartedParse: Object;
@@ -8,6 +9,7 @@ function clearStartedParse() {
     document.getElementById("finish-parse-section").innerHTML = "";
     localStartedParse = undefined;
 }
+window.clearStartedParse = clearStartedParse;
 
 // noinspection JSUnusedLocalSymbols
 function go() {
@@ -17,6 +19,7 @@ function go() {
     reader.readAsText(file);
     reader.addEventListener('loadend', onFileLoaded);
 }
+window.go = go;
 
 function onFileLoaded() {
     let file: string = <string> reader.result;
@@ -29,7 +32,7 @@ function startParse(file) {
     showModeOptions(modeOptions);
 }
 
-function getModeOptionsForDisplay(metaData: Object) {
+export default function getModeOptionsForDisplay(metaData: Object) {
     let modes: Array<Object> = metaData["NOTES"];
     let modeOptions: Array<Object> = [];
     for(let i = 0; i < modes.length; i++) {
@@ -121,6 +124,7 @@ function finishParse() {
     //showParseInTextbox(tracks);
     drawParse(tracks);
 }
+window.finishParse = finishParse;
 
 function showParseInTextbox(parse) {
     document.getElementById("result-box-section").innerHTML =
