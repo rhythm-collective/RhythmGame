@@ -8,12 +8,22 @@
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Trumpet63-stream/SimParser"
+    "url": "git+https://github.com/Trumpet63-stream/SimParser.git"
   },
   "scripts": {
     "build": "tsc"
   },
   "devDependencies": {
-    "typescript": "^3.4.3"
-  }
+    "ts-loader": "^6.1.0",
+    "typescript": "^3.6.3",
+    "webpack": "^4.40.0",
+    "webpack-cli": "^3.3.8"
+  },
+  "bugs": {
+    "url": "https://github.com/Trumpet63-stream/SimParser/issues"
+  },
+  "homepage": "https://github.com/Trumpet63-stream/SimParser#readme",
+  "version": "1.0.0",
+  "dependencies": {},
+  "keywords": []
 }

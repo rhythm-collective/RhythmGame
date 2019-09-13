@@ -1,6 +1,6 @@
 let canvas;
 
-function prepareDisplay(tracks: Note[][]) {
+export function prepareDisplay(tracks: Note[][]) {
 	canvas = document.getElementById("canvas");
 	canvas.height = 600;
 	canvas.width = 400;

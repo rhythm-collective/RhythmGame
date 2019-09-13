@@ -1,6 +1,6 @@
 /* Step One Of Parsing */
 
-function parseMetaData(file: string) {
+export function parseMetaData(file: string) {
 	let metaData = parseMainMetaDataTags(file);
 	metaData["BPMS"] = parseBPMS(metaData["BPMS"]);
 	if(metaData["STOPS"] != null) {
@@ -85,7 +85,7 @@ function cleanMetaDataString(string) {
 
 /* Step Two Of Parsing */
 
-function getNoteTimesForMode(modeIndex, startedParse) {
+export function getNoteTimesForMode(modeIndex, startedParse) {
 	let unparsedNotes = startedParse["NOTES"][modeIndex]["notes"];
 	let unparsedArray = unparsedNotes.split("\n");
 	let measures = getMeasures(unparsedArray);
