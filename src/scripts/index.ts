@@ -4,22 +4,30 @@ import {getNoteTimesForMode, parseMetaData} from "./parsing";
 let reader: FileReader;
 let localStartedParse: Object;
 
-// noinspection JSUnusedGlobalSymbols,JSUnusedLocalSymbols
-function clearStartedParse() {
-    document.getElementById("finish-parse-section").innerHTML = "";
-    localStartedParse = undefined;
+export function parseFile(
+  file: File,
+  listener: (this: FileReader, ev: ProgressEvent<FileReader>) => any,
+  options?: boolean | AddEventListenerOptions
+) {
+  reader = new FileReader();
+  reader.readAsText(file);
+  reader.addEventListener("loadend", listener, options);
 }
-window.clearStartedParse = clearStartedParse;
+
+// noinspection JSUnusedGlobalSymbols,JSUnusedLocalSymbols
+export function clearStartedParse() {
+  document.getElementById("finish-parse-section").innerHTML = "";
+  localStartedParse = undefined;
+}
 
 // noinspection JSUnusedLocalSymbols
-function go() {
-    let upload: HTMLInputElement = <HTMLInputElement> document.getElementById("upload");
-    let file: File = upload.files[0];
-    reader = new FileReader();
-    reader.readAsText(file);
-    reader.addEventListener('loadend', onFileLoaded);
+export function go() {
+  let upload: HTMLInputElement = <HTMLInputElement>(
+    document.getElementById("upload")
+  );
+  let file: File = upload.files[0];
+  parseFile(file, onFileLoaded);
 }
-window.go = go;
 
 function onFileLoaded() {
     let file: string = <string> reader.result;
@@ -113,18 +121,17 @@ function showModeOptions(modeOptions) {
 }
 
 function getFinishParseButton() {
-    return '<input type="button" value="Finish Parse" onclick="finishParse()"><br>';
+    return '<input type="button" value="Finish Parse" onclick="simparser.finishParse()"><br>';
 }
 
 // noinspection JSUnusedLocalSymbols
-function finishParse() {
+export function finishParse() {
     let selectedMode: string = (<HTMLInputElement> document.getElementById("mode-select")).value;
     let tracks: Array<Object> = getNoteTimesForMode(selectedMode, localStartedParse);
     console.log(tracks);
     //showParseInTextbox(tracks);
     drawParse(tracks);
 }
-window.finishParse = finishParse;
 
 function showParseInTextbox(parse) {
     document.getElementById("result-box-section").innerHTML =
