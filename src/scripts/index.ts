@@ -1,84 +1,80 @@
-import {prepareDisplay} from "./display";
-import {getNoteTimesForMode, parseMetaData} from "./parsing";
+import {Note, prepareDisplay} from "./display";
+import {getNoteTimesForMode, getPartialParse, PartialParse} from "./parsing";
 
-let reader: FileReader;
-let localStartedParse: Object;
-
-export function parseFile(
-  file: File,
-  listener: (this: FileReader, ev: ProgressEvent<FileReader>) => any,
-  options?: boolean | AddEventListenerOptions
-) {
-  reader = new FileReader();
-  reader.readAsText(file);
-  reader.addEventListener("loadend", listener, options);
-}
-
-// noinspection JSUnusedGlobalSymbols,JSUnusedLocalSymbols
-export function clearStartedParse() {
-  document.getElementById("finish-parse-section").innerHTML = "";
-  localStartedParse = undefined;
-}
-
-// noinspection JSUnusedLocalSymbols
-export function go() {
-  let upload: HTMLInputElement = <HTMLInputElement>(
-    document.getElementById("upload")
-  );
-  let file: File = upload.files[0];
-  parseFile(file, onFileLoaded);
-}
-
-function onFileLoaded() {
-    let file: string = <string> reader.result;
-    startParse(file);
-}
-
-function startParse(file) {
-    localStartedParse = parseMetaData(file);
-    let modeOptions: Array<Object> = getModeOptionsForDisplay(localStartedParse);
-    showModeOptions(modeOptions);
-}
-
-export default function getModeOptionsForDisplay(metaData: Object) {
-    let modes: Array<Object> = metaData["NOTES"];
-    let modeOptions: Array<Object> = [];
-    for(let i = 0; i < modes.length; i++) {
-        let mode: Object = modes[i];
-        modeOptions.push({type: mode["type"], difficulty: mode["difficulty"], meter: mode["meter"], id: i});
-    }
-    modeOptions.sort(compareModeOptions);
-    return modeOptions;
-}
-
-class Mode {
+export class Mode {
     public type: string;
     public difficulty: string;
     public meter: string;
     public id: number;
 }
 
-function compareModeOptions(a: Mode, b: Mode) {
+let reader: FileReader;
+let localStartedParse: PartialParse;
+
+export function parseFile(
+    file: File,
+    listener: (this: FileReader, ev: ProgressEvent<FileReader>) => any,
+    options?: boolean | AddEventListenerOptions
+) {
+    reader = new FileReader();
+    reader.readAsText(file);
+    reader.addEventListener("loadend", listener, options);
+}
+
+// noinspection JSUnusedGlobalSymbols,JSUnusedLocalSymbols
+export function clearStartedParse() {
+    document.getElementById("finish-parse-section").innerHTML = "";
+    localStartedParse = undefined;
+}
+
+// noinspection JSUnusedLocalSymbols
+export function go() {
+    let upload: HTMLInputElement = <HTMLInputElement>(
+        document.getElementById("upload")
+    );
+    let file: File = upload.files[0];
+    parseFile(file, onFileLoaded);
+}
+
+function onFileLoaded() {
+    let fileContents: string = <string>reader.result;
+    startParse(fileContents);
+}
+
+function startParse(fileContents: string) {
+    localStartedParse = getPartialParse(fileContents);
+    let modeOptions: Mode[] = getModeOptionsForDisplay(localStartedParse.modes);
+    showModeOptions(modeOptions);
+}
+
+export function getModeOptionsForDisplay(modesAsStrings: Map<string, string>[]) {
+    let modeOptions: Mode[] = [];
+    for (let i = 0; i < modesAsStrings.length; i++) {
+        let mode: Map<string, string> = modesAsStrings[i];
+        modeOptions.push({type: mode.get("type"), difficulty: mode.get("difficulty"), meter: mode.get("meter"), id: i});
+    }
+    modeOptions.sort(compareModeOptions);
+    return modeOptions;
+}
+
+export function compareModeOptions(a: Mode, b: Mode) {
     let typeA = a.type.toUpperCase();
     let typeB = b.type.toUpperCase();
     if (typeA != typeB) {
-        if(typeA < typeB) {
+        if (typeA < typeB) {
             return -1;
-        }
-        else {
+        } else {
             return 1;
         }
-    }
-    else {
+    } else {
         let difficultyA = a.difficulty.toUpperCase();
         let difficultyB = b.difficulty.toUpperCase();
-        if(difficultyA != difficultyB) {
+        if (difficultyA != difficultyB) {
             return difficultyRank(difficultyA) - difficultyRank(difficultyB);
-        }
-        else {
+        } else {
             let meterA = parseFloat(a.meter);
             let meterB = parseFloat(b.meter);
-            if(meterA != meterB) {
+            if (meterA != meterB) {
                 return meterA - meterB;
             }
         }
@@ -87,7 +83,7 @@ function compareModeOptions(a: Mode, b: Mode) {
 }
 
 function difficultyRank(difficulty: string) {
-    switch(difficulty) {
+    switch (difficulty) {
         case "BEGINNER":
             return 0;
         case "EASY":
@@ -105,14 +101,14 @@ function difficultyRank(difficulty: string) {
     }
 }
 
-function showModeOptions(modeOptions) {
+function showModeOptions(modeOptions: Mode[]) {
     let modeSelect: HTMLElement = document.getElementById("finish-parse-section");
     let html: string = 'Choose a mode: <select id="mode-select">\n' +
         '<option hidden disabled selected value></option>\n';
-    for(let i = 0; i < modeOptions.length; i++) {
+    for (let i = 0; i < modeOptions.length; i++) {
         let mode: Mode = modeOptions[i];
-        html += '<option value="' + mode["id"] + '">' +
-            mode["type"] + ', ' + mode["difficulty"] + ', ' + mode["meter"] +
+        html += '<option value="' + mode.id + '">' +
+            mode.type + ', ' + mode.difficulty + ', ' + mode.meter +
             '</option>\n';
     }
     html += '</select><br>\n';
@@ -126,20 +122,20 @@ function getFinishParseButton() {
 
 // noinspection JSUnusedLocalSymbols
 export function finishParse() {
-    let selectedMode: string = (<HTMLInputElement> document.getElementById("mode-select")).value;
-    let tracks: Array<Object> = getNoteTimesForMode(selectedMode, localStartedParse);
+    let selectedMode: number = parseInt((<HTMLInputElement>document.getElementById("mode-select")).value);
+    let tracks: Note[][] = getNoteTimesForMode(selectedMode, localStartedParse);
     console.log(tracks);
     //showParseInTextbox(tracks);
     drawParse(tracks);
 }
 
-function showParseInTextbox(parse) {
+function showParseInTextbox(parse: Note[][]) {
     document.getElementById("result-box-section").innerHTML =
         '<br><!--suppress HtmlUnknownAttribute --><input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value=' +
         JSON.stringify(parse) + '>';
 }
 
-function drawParse(tracks) {
+function drawParse(tracks: Note[][]) {
     document.getElementById("graphical-display-section").innerHTML =
         '<br><canvas id="canvas"></canvas>';
     prepareDisplay(tracks);
