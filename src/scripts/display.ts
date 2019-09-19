@@ -1,3 +1,5 @@
+import * as p5 from "p5";
+
 enum NoteType {
     NONE = "0",
     NORMAL = "1",
@@ -12,15 +14,105 @@ export class Note {
     time: number;
 }
 
+class AccuracyManager {
+    noteManager: NoteManager;
+    playerKeyActionBuffer: PlayerKeyAction[] = [];
+
+    enqueuePlayerKeyAction(action: PlayerKeyAction) {
+        this.playerKeyActionBuffer.push(action);
+    }
+
+    processPlayerKeyActionBuffer() {
+        this.processPlayerKeyActions(this.playerKeyActionBuffer);
+    }
+
+    processPlayerKeyActions(actions: PlayerKeyAction[]): void {
+        if(actions.length > 0) {
+            console.log("start queue");
+            while (actions.length > 0) {
+                this.handleAction(actions.shift(), noteManager.currentTime);
+            }
+            console.log("end queue");
+        }
+    }
+
+    private handleAction(action: PlayerKeyAction, currentTime: number): void {
+        console.log("Key=" + action.key);
+    }
+}
+
 let canvas: HTMLCanvasElement;
+let noteManager: NoteManager;
+const gameContainer = document.getElementById("graphical-display-section");
+let accuracyManager: AccuracyManager = new AccuracyManager();
+
+const sketch = (p: p5): void => {
+    p.setup = function() {
+        canvas = p.createCanvas(400, 600).elt;
+        console.log(canvas);
+    };
+
+    p.draw = function() {
+        if(noteManager != null) {
+            noteManager.draw();
+            accuracyManager.processPlayerKeyActionBuffer();
+        }
+    };
+};
+
+new p5(sketch, gameContainer);
 
 export function prepareDisplay(tracks: Note[][]) {
-    canvas = <HTMLCanvasElement>document.getElementById("canvas");
-    canvas.height = 600;
-    canvas.width = 400;
-    let noteManager: NoteManager = new NoteManager(tracks, 6);
-    noteManager.draw();
-    canvas.addEventListener("wheel", e => noteManager.canvasScrolled(e));
+    noteManager = new NoteManager(tracks, 6);
+    accuracyManager.noteManager = noteManager;
+    canvas.addEventListener("wheel", e => canvasScrolled(e));
+    let keyHandler = new KeyHandler();
+    document.addEventListener("keydown", (e) => (keyHandler.keyDown(e)));
+    document.addEventListener("keyup", (e) => (keyHandler.keyUp(e)));
+    keyHandler.timeHandler = new TimeHandler(performance.now());
+    keyHandler.accuracyManager = accuracyManager;
+}
+
+class PlayerKeyAction {
+    gameTime: number;
+    key: string;
+
+    constructor(gameTime: number, key: string) {
+        this.gameTime = gameTime;
+        this.key = key;
+    }
+}
+
+class TimeHandler {
+    systemTimeWhenGameStarted: number;
+
+    constructor(systemTimeWhenGameStarted: number) {
+        this.systemTimeWhenGameStarted = systemTimeWhenGameStarted;
+    }
+
+    getGameTime(systemTime: number): number {
+        return systemTime - this.systemTimeWhenGameStarted;
+    }
+}
+
+class KeyHandler {
+    timeHandler: TimeHandler;
+    accuracyManager: AccuracyManager;
+
+    keyDown(e: KeyboardEvent) {
+        this.accuracyManager.enqueuePlayerKeyAction(
+            new PlayerKeyAction(this.timeHandler.getGameTime(performance.now()), e.key)
+        );
+    }
+
+    keyUp(e: KeyboardEvent) {
+        //TODO: holds
+    }
+}
+
+function canvasScrolled(e: WheelEvent) {
+    let timeChange = e.deltaY * noteManager.secondsPerPixel;
+    noteManager.currentTime += timeChange;
 }
 
 class NoteDisplay {
@@ -37,6 +129,7 @@ class NoteDisplay {
     draw() {
         let ctx = canvas.getContext("2d");
         ctx.save();
+        ctx.fillStyle = "black";
         switch (this.noteType) {
             case NoteType.NORMAL:
                 ctx.fillRect(this.x, this.y, 20, 20);
@@ -91,6 +184,7 @@ class HoldConnector {
 
     draw() {
         let ctx = canvas.getContext("2d");
+        ctx.fillStyle = "black";
         ctx.save();
         ctx.fillRect(this.x + 5, this.startY, 10, this.endY - this.startY);
         ctx.restore();
@@ -106,12 +200,6 @@ class NoteManager {
         this.tracks = tracks_;
         this.secondsPerPixel = 0.005;
         this.currentTime = initialTime;
-    }
-
-    canvasScrolled(e: WheelEvent) {
-        let timeChange = e.deltaY * this.secondsPerPixel;
-        this.currentTime += timeChange;
-        this.draw();
     }
 
     draw() {
@@ -168,7 +256,7 @@ class NoteManager {
 
     clear() {
         let ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width / 2, canvas.height / 2);
     }
 
     getLeastTime(currentTime: number) {
@@ -176,11 +264,11 @@ class NoteManager {
     }
 
     getGreatestTime(leastTime: number) {
-        return leastTime + canvas.height * this.secondsPerPixel;
+        return leastTime + (canvas.height / 2) * this.secondsPerPixel;
     }
 
     getNoteX(trackNumber: number, numTracks: number) {
-        let noteTrackSize = canvas.width / (numTracks + (numTracks + 1) / 2);
+        let noteTrackSize = (canvas.width / 2) / (numTracks + (numTracks + 1) / 2);
         return (0.5 + trackNumber * 1.5) * noteTrackSize;
     }
 

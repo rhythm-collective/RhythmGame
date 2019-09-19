@@ -124,9 +124,9 @@ function getFinishParseButton() {
 export function finishParse() {
     let selectedMode: number = parseInt((<HTMLInputElement>document.getElementById("mode-select")).value);
     let tracks: Note[][] = getNoteTimesForMode(selectedMode, localStartedParse);
-    console.log(tracks);
     //showParseInTextbox(tracks);
     drawParse(tracks);
+    showGameplayOptions(tracks);
 }
 
 function showParseInTextbox(parse: Note[][]) {
@@ -136,7 +136,36 @@ function showParseInTextbox(parse: Note[][]) {
 }
 
 function drawParse(tracks: Note[][]) {
-    document.getElementById("graphical-display-section").innerHTML =
-        '<br><canvas id="canvas"></canvas>';
+    //document.getElementById("graphical-display-section").innerHTML =
+    //    '<br><canvas id="canvas"></canvas>';
     prepareDisplay(tracks);
+}
+
+class KeyBindingManager {
+    expectingKeyInput: boolean = false;
+    receivingElement: HTMLInputElement;
+
+    keyDown(e: KeyboardEvent) {
+        if(this.expectingKeyInput) {
+            this.receivingElement.value = e.key.toUpperCase();
+            this.expectingKeyInput = false;
+        }
+    }
+}
+
+let keyBindingManager: KeyBindingManager = new KeyBindingManager();
+
+function showGameplayOptions(tracks: Note[][]) {
+    let keyBindingOptions: string = "";
+    for(let i = 0; i < tracks.length; i++) {
+        keyBindingOptions += '<input type="button" value="Key #' + (i + 1) + '" onclick="simparser.bindingClicked(' + i + ')">' +
+            '<input type="text" size="10" style="margin: 0px 20px 0px 5px;" id="key-binding-field-' + i + '">';
+    }
+    document.getElementById("gameplay-settings-section").innerHTML = "<br>" + keyBindingOptions;
+    document.addEventListener("keydown", (e) => (keyBindingManager.keyDown(e)));
+}
+
+export function bindingClicked(bindingIndex: number) {
+    keyBindingManager.expectingKeyInput = true;
+    keyBindingManager.receivingElement = <HTMLInputElement>document.getElementById("key-binding-field-" + bindingIndex);
 }

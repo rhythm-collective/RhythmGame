@@ -4,6 +4,9 @@ module.exports = {
     entry: './src/scripts/index.ts',
     devtool: 'inline-source-map',
     mode: 'development',
+    externals: {
+        p5: 'p5'
+    },
     module: {
         rules: [
             {

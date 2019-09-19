@@ -24,6 +24,8 @@
   },
   "homepage": "https://github.com/Trumpet63-stream/SimParser#readme",
   "version": "1.0.0",
-  "dependencies": {},
+  "dependencies": {
+    "@types/p5": "^0.9.0"
+  },
   "keywords": []
 }
