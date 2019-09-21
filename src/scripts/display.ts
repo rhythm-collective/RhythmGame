@@ -1,4 +1,5 @@
 import * as p5 from "p5";
+import {accuracyManager, gameStarted, timeHandler} from "./gameplay";
 
 enum NoteType {
     NONE = "0",
@@ -12,102 +13,35 @@ enum NoteType {
 export class Note {
     type: string;
     time: number;
-}
-
-class AccuracyManager {
-    noteManager: NoteManager;
-    playerKeyActionBuffer: PlayerKeyAction[] = [];
-
-    enqueuePlayerKeyAction(action: PlayerKeyAction) {
-        this.playerKeyActionBuffer.push(action);
-    }
-
-    processPlayerKeyActionBuffer() {
-        this.processPlayerKeyActions(this.playerKeyActionBuffer);
-    }
-
-    processPlayerKeyActions(actions: PlayerKeyAction[]): void {
-        if(actions.length > 0) {
-            console.log("start queue");
-            while (actions.length > 0) {
-                this.handleAction(actions.shift(), noteManager.currentTime);
-            }
-            console.log("end queue");
-        }
-    }
-
-    private handleAction(action: PlayerKeyAction, currentTime: number): void {
-        console.log("Key=" + action.key);
-    }
+    isHit: boolean;
 }
 
 let canvas: HTMLCanvasElement;
-let noteManager: NoteManager;
+export let noteManager: NoteManager;
 const gameContainer = document.getElementById("graphical-display-section");
-let accuracyManager: AccuracyManager = new AccuracyManager();
 
 const sketch = (p: p5): void => {
     p.setup = function() {
         canvas = p.createCanvas(400, 600).elt;
-        console.log(canvas);
     };
 
     p.draw = function() {
         if(noteManager != null) {
+            if(gameStarted) {
+                noteManager.currentTime = timeHandler.getGameTime(performance.now()) / 1000;
+            }
             noteManager.draw();
-            accuracyManager.processPlayerKeyActionBuffer();
         }
     };
 };
 
 new p5(sketch, gameContainer);
 
+//TODO: Prevent duplicating actions in this function when changing input file
 export function prepareDisplay(tracks: Note[][]) {
-    noteManager = new NoteManager(tracks, 6);
+    noteManager = new NoteManager(tracks, 1);
     accuracyManager.noteManager = noteManager;
     canvas.addEventListener("wheel", e => canvasScrolled(e));
-    let keyHandler = new KeyHandler();
-    document.addEventListener("keydown", (e) => (keyHandler.keyDown(e)));
-    document.addEventListener("keyup", (e) => (keyHandler.keyUp(e)));
-    keyHandler.timeHandler = new TimeHandler(performance.now());
-    keyHandler.accuracyManager = accuracyManager;
-}
-
-class PlayerKeyAction {
-    gameTime: number;
-    key: string;
-
-    constructor(gameTime: number, key: string) {
-        this.gameTime = gameTime;
-        this.key = key;
-    }
-}
-
-class TimeHandler {
-    systemTimeWhenGameStarted: number;
-
-    constructor(systemTimeWhenGameStarted: number) {
-        this.systemTimeWhenGameStarted = systemTimeWhenGameStarted;
-    }
-
-    getGameTime(systemTime: number): number {
-        return systemTime - this.systemTimeWhenGameStarted;
-    }
-}
-
-class KeyHandler {
-    timeHandler: TimeHandler;
-    accuracyManager: AccuracyManager;
-
-    keyDown(e: KeyboardEvent) {
-        this.accuracyManager.enqueuePlayerKeyAction(
-            new PlayerKeyAction(this.timeHandler.getGameTime(performance.now()), e.key)
-        );
-    }
-
-    keyUp(e: KeyboardEvent) {
-        //TODO: holds
-    }
 }
 
 function canvasScrolled(e: WheelEvent) {
@@ -191,10 +125,11 @@ class HoldConnector {
     }
 }
 
-class NoteManager {
+export class NoteManager {
     tracks: Note[][];
     secondsPerPixel: number;
     currentTime: number;
+    onScreenNotes: Note[][];
 
     constructor(tracks_: Note[][], initialTime: number) {
         this.tracks = tracks_;
@@ -215,7 +150,9 @@ class NoteManager {
     }
 
     drawAllNotes(leastTime: number, greatestTime: number) {
+        this.onScreenNotes = [];
         for (let i = 0; i < this.tracks.length; i++) {
+            this.onScreenNotes.push([]);
             this.drawNotesInTrack(leastTime, greatestTime, this.tracks[i], i,
                 this.tracks.length, this.currentTime);
         }
@@ -230,9 +167,12 @@ class NoteManager {
     }
 
     drawNote(note: Note, trackNumber: number, numTracks: number, currentTime: number) {
-        let x = this.getNoteX(trackNumber, numTracks);
-        let y = this.getNoteY(note.time, currentTime);
-        new NoteDisplay(x, y, note.type).draw();
+        this.onScreenNotes[trackNumber].push(note);
+        if(!note.isHit) {
+            let x = this.getNoteX(trackNumber, numTracks);
+            let y = this.getNoteY(note.time, currentTime);
+            new NoteDisplay(x, y, note.type).draw();
+        }
     }
 
     //TODO: properly indicate when there are NO notes to draw

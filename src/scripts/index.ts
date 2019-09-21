@@ -1,5 +1,6 @@
 import {Note, prepareDisplay} from "./display";
 import {getNoteTimesForMode, getPartialParse, PartialParse} from "./parsing";
+import {prepareGameplay} from "./gameplay";
 
 export class Mode {
     public type: string;
@@ -141,7 +142,7 @@ function drawParse(tracks: Note[][]) {
     prepareDisplay(tracks);
 }
 
-class KeyBindingManager {
+class KeyBindingUIManager {
     expectingKeyInput: boolean = false;
     receivingElement: HTMLInputElement;
 
@@ -153,16 +154,29 @@ class KeyBindingManager {
     }
 }
 
-let keyBindingManager: KeyBindingManager = new KeyBindingManager();
+let keyBindingManager: KeyBindingUIManager = new KeyBindingUIManager();
 
 function showGameplayOptions(tracks: Note[][]) {
+    document.getElementById("gameplay-settings-section").innerHTML =
+        '<br>' + getKeyBindingMenu(tracks.length) + '<br>' + getStartGameButton();
+    document.addEventListener("keydown", (e) => (keyBindingManager.keyDown(e)));
+}
+
+function getKeyBindingMenu(numTracks: number): string {
     let keyBindingOptions: string = "";
-    for(let i = 0; i < tracks.length; i++) {
+    for(let i = 0; i < numTracks; i++) {
         keyBindingOptions += '<input type="button" value="Key #' + (i + 1) + '" onclick="simparser.bindingClicked(' + i + ')">' +
             '<input type="text" size="10" style="margin: 0px 20px 0px 5px;" id="key-binding-field-' + i + '">';
     }
-    document.getElementById("gameplay-settings-section").innerHTML = "<br>" + keyBindingOptions;
-    document.addEventListener("keydown", (e) => (keyBindingManager.keyDown(e)));
+    return keyBindingOptions;
+}
+
+function getStartGameButton(): string {
+    return '<input type="button" value="Play" onclick="simparser.goToPrepareGameplay()">';
+}
+
+export function goToPrepareGameplay() {
+    prepareGameplay();
 }
 
 export function bindingClicked(bindingIndex: number) {

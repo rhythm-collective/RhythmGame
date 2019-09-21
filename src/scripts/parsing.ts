@@ -210,7 +210,7 @@ function getTracksFromLines(timesBeatsAndLines: { time: number; beat: number; li
         for (let j = 0; j < line.lineInfo.length; j++) {
             let noteType = line.lineInfo.charAt(j);
             if (noteType !== "0") {
-                tracks[j].push({type: noteType, time: line.time});
+                tracks[j].push({type: noteType, time: line.time, isHit: false}); //TODO: isHit: false should be done elsewhere
             }
         }
     }
