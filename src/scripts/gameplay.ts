@@ -70,18 +70,25 @@ export let accuracyManager: AccuracyManager = new AccuracyManager();
 export let timeHandler: TimeHandler;
 export let gameStarted: boolean = false;
 
-export function prepareGameplay() {
+export function startGame() {
     let bindingManager: KeyBindingManager = new KeyBindingManager();
-    let keyHandler = new KeyHandler();
-    document.addEventListener("keydown", (e) => (keyHandler.keyDown(e)));
-    document.addEventListener("keyup", (e) => (keyHandler.keyUp(e)));
+    document.addEventListener("keydown", KeyHandler.keyDown);
+    document.addEventListener("keyup", KeyHandler.keyUp);
     bindingManager.getBindings(noteManager.tracks.length);
     timeHandler = new TimeHandler(performance.now());
     gameStarted = true;
     accuracyManager.timeHandler = timeHandler;
-    keyHandler.timeHandler = timeHandler;
-    keyHandler.accuracyManager = accuracyManager;
-    keyHandler.bindingManager = bindingManager;
+    KeyHandler.timeHandler = timeHandler;
+    KeyHandler.accuracyManager = accuracyManager;
+    KeyHandler.bindingManager = bindingManager;
+}
+
+export function cleanupGame() {
+    if(gameStarted) {
+        document.removeEventListener("keydown", KeyHandler.keyDown);
+        document.removeEventListener("keyup", KeyHandler.keyUp);
+        gameStarted = false;
+    }
 }
 
 enum KeyState {
@@ -112,26 +119,23 @@ class TimeHandler {
     }
 }
 
-class KeyHandler {
-    timeHandler: TimeHandler;
-    accuracyManager: AccuracyManager;
-    bindingManager: KeyBindingManager;
-
-    keyDown(e: KeyboardEvent) {
+let KeyHandler: any = {
+    timeHandler: undefined,
+    accuracyManager: undefined,
+    bindingManager: undefined,
+    keyDown: function(e: KeyboardEvent) {
         if(!e.repeat) {
-            this.handleKeyboardEvent(e, KeyState.DOWN);
+            KeyHandler.handleKeyboardEvent(e, KeyState.DOWN);
         }
-    }
-
-    keyUp(e: KeyboardEvent) {
-        this.handleKeyboardEvent(e, KeyState.UP);
-    }
-
-    handleKeyboardEvent(e: KeyboardEvent, keyState: KeyState) {
-        this.accuracyManager.handlePlayerAction(
+    },
+    keyUp: function(e: KeyboardEvent) {
+        KeyHandler.handleKeyboardEvent(e, KeyState.UP);
+    },
+    handleKeyboardEvent: function(e: KeyboardEvent, keyState: KeyState) {
+        KeyHandler.accuracyManager.handlePlayerAction(
             new PlayerKeyAction(
-                this.timeHandler.getGameTime(performance.now()),
-                this.bindingManager.getTrackIndex(e.key),
+                KeyHandler.timeHandler.getGameTime(performance.now()),
+                KeyHandler.bindingManager.getTrackIndex(e.key),
                 keyState
             )
         );

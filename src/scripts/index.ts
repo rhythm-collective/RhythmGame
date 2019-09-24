@@ -1,6 +1,7 @@
 import {Note, prepareDisplay} from "./display";
 import {getNoteTimesForMode, getPartialParse, PartialParse} from "./parsing";
-import {prepareGameplay} from "./gameplay";
+import {cleanupGame, startGame} from "./gameplay";
+import {setUIState, SimfileState} from "./ui_state";
 
 export class Mode {
     public type: string;
@@ -11,8 +12,10 @@ export class Mode {
 
 let reader: FileReader;
 let localStartedParse: PartialParse;
+setUIState(SimfileState.NO_SIMFILE);
+document.getElementById("upload").addEventListener("change", simfileUploaded);
 
-export function parseFile(
+export function loadFile(
     file: File,
     listener: (this: FileReader, ev: ProgressEvent<FileReader>) => any,
     options?: boolean | AddEventListenerOptions
@@ -23,18 +26,19 @@ export function parseFile(
 }
 
 // noinspection JSUnusedGlobalSymbols,JSUnusedLocalSymbols
-export function clearStartedParse() {
-    document.getElementById("finish-parse-section").innerHTML = "";
+export function simfileUploaded() {
     localStartedParse = undefined;
+    cleanupGame();
+    setUIState(SimfileState.SIMFILE_UPLOADED);
 }
 
 // noinspection JSUnusedLocalSymbols
-export function go() {
+export function preparseSimfile() {
     let upload: HTMLInputElement = <HTMLInputElement>(
         document.getElementById("upload")
     );
     let file: File = upload.files[0];
-    parseFile(file, onFileLoaded);
+    loadFile(file, onFileLoaded);
 }
 
 function onFileLoaded() {
@@ -45,7 +49,8 @@ function onFileLoaded() {
 function startParse(fileContents: string) {
     localStartedParse = getPartialParse(fileContents);
     let modeOptions: Mode[] = getModeOptionsForDisplay(localStartedParse.modes);
-    showModeOptions(modeOptions);
+    cleanupGame();
+    setUIState(SimfileState.SIMFILE_PREPARSED, modeOptions);
 }
 
 export function getModeOptionsForDisplay(modesAsStrings: Map<string, string>[]) {
@@ -102,43 +107,22 @@ function difficultyRank(difficulty: string) {
     }
 }
 
-function showModeOptions(modeOptions: Mode[]) {
-    let modeSelect: HTMLElement = document.getElementById("finish-parse-section");
-    let html: string = 'Choose a mode: <select id="mode-select">\n' +
-        '<option hidden disabled selected value></option>\n';
-    for (let i = 0; i < modeOptions.length; i++) {
-        let mode: Mode = modeOptions[i];
-        html += '<option value="' + mode.id + '">' +
-            mode.type + ', ' + mode.difficulty + ', ' + mode.meter +
-            '</option>\n';
-    }
-    html += '</select><br>\n';
-    html += getFinishParseButton();
-    modeSelect.innerHTML = html;
-}
-
-function getFinishParseButton() {
-    return '<input type="button" value="Finish Parse" onclick="simparser.finishParse()"><br>';
+export function modeSelected() {
+    cleanupGame();
+    setUIState(SimfileState.DIFFICULTY_SELECTED);
 }
 
 // noinspection JSUnusedLocalSymbols
 export function finishParse() {
     let selectedMode: number = parseInt((<HTMLInputElement>document.getElementById("mode-select")).value);
     let tracks: Note[][] = getNoteTimesForMode(selectedMode, localStartedParse);
-    //showParseInTextbox(tracks);
     drawParse(tracks);
-    showGameplayOptions(tracks);
-}
-
-function showParseInTextbox(parse: Note[][]) {
-    document.getElementById("result-box-section").innerHTML =
-        '<br><!--suppress HtmlUnknownAttribute --><input type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value=' +
-        JSON.stringify(parse) + '>';
+    cleanupGame();
+    setUIState(SimfileState.SIMFILE_PARSED, tracks);
+    document.addEventListener("keydown", (e) => (keyBindingManager.keyDown(e)));
 }
 
 function drawParse(tracks: Note[][]) {
-    //document.getElementById("graphical-display-section").innerHTML =
-    //    '<br><canvas id="canvas"></canvas>';
     prepareDisplay(tracks);
 }
 
@@ -156,27 +140,8 @@ class KeyBindingUIManager {
 
 let keyBindingManager: KeyBindingUIManager = new KeyBindingUIManager();
 
-function showGameplayOptions(tracks: Note[][]) {
-    document.getElementById("gameplay-settings-section").innerHTML =
-        '<br>' + getKeyBindingMenu(tracks.length) + '<br>' + getStartGameButton();
-    document.addEventListener("keydown", (e) => (keyBindingManager.keyDown(e)));
-}
-
-function getKeyBindingMenu(numTracks: number): string {
-    let keyBindingOptions: string = "";
-    for(let i = 0; i < numTracks; i++) {
-        keyBindingOptions += '<input type="button" value="Key #' + (i + 1) + '" onclick="simparser.bindingClicked(' + i + ')">' +
-            '<input type="text" size="10" style="margin: 0px 20px 0px 5px;" id="key-binding-field-' + i + '">';
-    }
-    return keyBindingOptions;
-}
-
-function getStartGameButton(): string {
-    return '<input type="button" value="Play" onclick="simparser.goToPrepareGameplay()">';
-}
-
 export function goToPrepareGameplay() {
-    prepareGameplay();
+    startGame();
 }
 
 export function bindingClicked(bindingIndex: number) {

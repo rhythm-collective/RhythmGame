@@ -1,11 +1,26 @@
 <html>
+<head>
+    <link rel="stylesheet" href="style.css">
+</head>
 <body>
-<input type="file" accept=".sm" id="upload" value="Upload From Computer" onclick="simparser.clearStartedParse()"><br>
-<input type="button" value="Start Parse" onclick="simparser.go()"><br>
-<span id="finish-parse-section"></span>
-<span id="gameplay-settings-section"></span>
-<span id="result-box-section"></span>
-<span id="graphical-display-section"></span>
+<div class="row">
+    <div class="column">
+        <span id="upload-simfile-section">
+            <input type="file" accept=".sm" id="upload"><br>
+        </span>
+        <span id="start-parse-section" style="display: none">
+            <input type="button" value="Start Parse" onclick="simparser.preparseSimfile()"><br>
+        </span>
+        <span id="select-mode-section" style="display: none;"></span>
+        <span id="finish-parse-section" style="display: none;">
+            <input type="button" value="Finish Parse" onclick="simparser.finishParse()"><br>
+        </span>
+        <span id="graphical-display-section" style="display: none"></span>
+    </div>
+    <div class="column">
+        <span id="gameplay-settings-section"></span>
+    </div>
+</div>
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/p5.js" integrity="sha256-nd3JLOQlNGixlXNjD4rPEwBNtIXCcsPW7jQW2C8HM/w=" crossorigin="anonymous"></script>
 <script src="../dist/bundle.js"></script>
