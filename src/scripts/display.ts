@@ -1,5 +1,6 @@
 import * as p5 from "p5";
 import {accuracyManager, gameStarted, timeHandler} from "./gameplay";
+import {Config} from "./config";
 
 enum NoteType {
     NONE = "0",
@@ -19,6 +20,7 @@ export class Note {
 let canvas: HTMLCanvasElement;
 export let noteManager: NoteManager;
 const gameContainer = document.getElementById("graphical-display-section");
+export let config: Config = new Config(0.005, 20);
 
 const sketch = (p: p5): void => {
     p.setup = function() {
@@ -125,21 +127,50 @@ class HoldConnector {
     }
 }
 
+class Receptor {
+    x: number;
+    y: number;
+
+    constructor(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
+
+    draw() {
+        let ctx = canvas.getContext("2d");
+        ctx.fillStyle = "black";
+        ctx.save();
+        ctx.strokeRect(this.x, this.y, 20, 20);
+        ctx.restore();
+    }
+}
+
 export class NoteManager {
     tracks: Note[][];
     secondsPerPixel: number;
     currentTime: number;
+    receptors: Receptor[];
     onScreenNotes: Note[][];
 
-    constructor(tracks_: Note[][], initialTime: number) {
-        this.tracks = tracks_;
-        this.secondsPerPixel = 0.005;
+    constructor(tracks: Note[][], initialTime: number) {
+        this.tracks = tracks;
+        this.secondsPerPixel = config.secondsPerPixel;
         this.currentTime = initialTime;
+        this.receptors = this.getInitialReceptors(tracks.length);
+    }
+
+    getInitialReceptors(numReceptors: number): Receptor[] {
+        let receptors = []
+        for(let i = 0; i < numReceptors; i++) {
+            receptors.push(new Receptor(this.getNoteX(i, numReceptors), config.receptorYPosition));
+        }
+        return receptors;
     }
 
     draw() {
         this.clear();
         this.drawNotesAndConnectors();
+        this.drawReceptors();
     }
 
     drawNotesAndConnectors() {
@@ -267,5 +298,11 @@ export class NoteManager {
         let startY = this.getNoteY(startNote.time, currentTime);
         let endY = this.getNoteY(endNote.time, currentTime);
         new HoldConnector(x, startY, endY).draw();
+    }
+
+    drawReceptors() {
+        for (let i = 0; i < this.receptors.length; i++) {
+            this.receptors[i].draw();
+        }
     }
 }

@@ -14,9 +14,14 @@ class AccuracyManager {
         let note: Note = this.getEarliestUnhitNote(trackNumber);
         if(note != null) {
             note.isHit = true;
-            let accuracy = (note.time * 1000) - this.timeHandler.getGameTime(performance.now());
+            let accuracy = (note.time * 1000) - this.getReceptorTimePosition(trackNumber);
             console.log(this.getAccuracyName(accuracy) + " (" + Math.round(accuracy) + " ms)");
         }
+    }
+
+    getReceptorTimePosition(receptorNumber: number) {
+        return this.timeHandler.getGameTime(performance.now()) +
+            (this.noteManager.receptors[receptorNumber].y * noteManager.secondsPerPixel * 1000);
     }
 
     getEarliestUnhitNote(trackNumber: number) {
@@ -119,19 +124,29 @@ class TimeHandler {
     }
 }
 
+// KeyHandler can't be a class because I want to be able to use document.removeEventListener
 let KeyHandler: any = {
     timeHandler: undefined,
     accuracyManager: undefined,
     bindingManager: undefined,
+    heldKeys: new Set<string>(),
     keyDown: function(e: KeyboardEvent) {
-        if(!e.repeat) {
+        if(!KeyHandler.heldKeys.has(e.key)) {
             KeyHandler.handleKeyboardEvent(e, KeyState.DOWN);
         }
     },
     keyUp: function(e: KeyboardEvent) {
-        KeyHandler.handleKeyboardEvent(e, KeyState.UP);
+        if(KeyHandler.heldKeys.has(e.key)) {
+            KeyHandler.handleKeyboardEvent(e, KeyState.UP);
+        }
     },
     handleKeyboardEvent: function(e: KeyboardEvent, keyState: KeyState) {
+        if(keyState == KeyState.DOWN) {
+            KeyHandler.heldKeys.add(e.key);
+        }
+        else {
+            KeyHandler.heldKeys.delete(e.key);
+        }
         KeyHandler.accuracyManager.handlePlayerAction(
             new PlayerKeyAction(
                 KeyHandler.timeHandler.getGameTime(performance.now()),

@@ -1,4 +1,4 @@
-import {Note, prepareDisplay} from "./display";
+import {config, Note, prepareDisplay} from "./display";
 import {getNoteTimesForMode, getPartialParse, PartialParse} from "./parsing";
 import {cleanupGame, startGame} from "./gameplay";
 import {setUIState, SimfileState} from "./ui_state";
@@ -147,4 +147,8 @@ export function goToPrepareGameplay() {
 export function bindingClicked(bindingIndex: number) {
     keyBindingManager.expectingKeyInput = true;
     keyBindingManager.receivingElement = <HTMLInputElement>document.getElementById("key-binding-field-" + bindingIndex);
+}
+
+export function configUpdated() {
+    config.update();
 }

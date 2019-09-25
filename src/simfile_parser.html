@@ -18,7 +18,14 @@
         <span id="graphical-display-section" style="display: none"></span>
     </div>
     <div class="column">
-        <span id="gameplay-settings-section"></span>
+        <span id="gameplay-settings-section" style="display: none">
+            <label for="scroll-speed" class="gameplay-option-label">Scroll Speed (px/sec)</label>
+            <input id="scroll-speed" type="text" value="200" onchange="simparser.configUpdated()"><br>
+            <label for="receptor-position" class="gameplay-option-label">Receptor Position</label>
+            <input id="receptor-position" type="text" value="20" onchange="simparser.configUpdated()"><br>
+            <span id="key-binding-menu"></span>
+            <input type="button" value="Play" onclick="simparser.goToPrepareGameplay()">
+        </span>
     </div>
 </div>
 </body>

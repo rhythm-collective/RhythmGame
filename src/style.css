@@ -12,3 +12,7 @@
 .p5Canvas {
     border-style: outset;
 }
+
+.gameplay-option-label {
+    margin-right: 20px;
+}

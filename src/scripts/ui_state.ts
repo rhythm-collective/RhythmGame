@@ -16,6 +16,7 @@ enum UISectionID {
     FINISH_PARSE_SECTION = "finish-parse-section",
     GRAPHICAL_DISPLAY_SECTION = "graphical-display-section",
     GAMEPLAY_SETTINGS_SECTION = "gameplay-settings-section",
+    KEY_BINDING_MENU = "key-binding-menu",
 }
 
 class UploadSimfileSection {
@@ -87,8 +88,8 @@ class GraphicalDisplaySection {
 class GameplaySettingsSection {
     show(tracks: Note[][] | null) {
         if(tracks != null) {
-            document.getElementById(UISectionID.GAMEPLAY_SETTINGS_SECTION).innerHTML =
-                '<br>' + this.getKeyBindingMenu(tracks.length) + '<br>' + this.getStartGameButton();
+            document.getElementById(UISectionID.KEY_BINDING_MENU).innerHTML =
+                this.getKeyBindingMenu(tracks.length) + '<br>';
         }
         document.getElementById(UISectionID.GAMEPLAY_SETTINGS_SECTION).style.display = "";
     }
@@ -100,10 +101,6 @@ class GameplaySettingsSection {
                 '<input type="text" size="10" style="margin: 0px 20px 0px 5px;" id="key-binding-field-' + i + '">';
         }
         return keyBindingOptions;
-    }
-
-    getStartGameButton(): string {
-        return '<input type="button" value="Play" onclick="simparser.goToPrepareGameplay()">';
     }
 
     hide() {
