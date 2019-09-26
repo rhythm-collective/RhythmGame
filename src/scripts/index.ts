@@ -2,6 +2,7 @@ import {config, Note, prepareDisplay} from "./display";
 import {getNoteTimesForMode, getPartialParse, PartialParse} from "./parsing";
 import {cleanupGame, startGame} from "./gameplay";
 import {setUIState, SimfileState} from "./ui_state";
+import {ConfigOption} from "./config";
 
 export class Mode {
     public type: string;
@@ -149,6 +150,16 @@ export function bindingClicked(bindingIndex: number) {
     keyBindingManager.receivingElement = <HTMLInputElement>document.getElementById("key-binding-field-" + bindingIndex);
 }
 
-export function configUpdated() {
-    config.update();
+export function configUpdated(configOptionCode: number) {
+    switch(configOptionCode) {
+        case ConfigOption.SECONDS_PER_PIXEL:
+            config.updateSecondsPerPixel();
+            break;
+        case ConfigOption.RECEPTOR_Y_POSITION:
+            config.updateReceptorYPosition();
+            break;
+        case ConfigOption.SCROLL_DIRECTION:
+            config.updateScrollDirection();
+            break;
+    }
 }

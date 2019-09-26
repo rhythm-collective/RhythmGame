@@ -1,4 +1,5 @@
-import {Note, noteManager, NoteManager} from "./display";
+import {config, Note, noteManager, NoteManager} from "./display";
+import {ScrollDirection} from "./config";
 
 class AccuracyManager {
     noteManager: NoteManager;
@@ -20,8 +21,14 @@ class AccuracyManager {
     }
 
     getReceptorTimePosition(receptorNumber: number) {
-        return this.timeHandler.getGameTime(performance.now()) +
-            (this.noteManager.receptors[receptorNumber].y * noteManager.secondsPerPixel * 1000);
+        if(config.scrollDirection == ScrollDirection.UP) {
+            return this.timeHandler.getGameTime(performance.now()) +
+                (config.receptorYPosition * config.secondsPerPixel * 1000);
+        }
+        else {
+            return this.timeHandler.getGameTime(performance.now()) +
+                    ((this.noteManager.getCanvasHeight() - config.receptorYPosition) * config.secondsPerPixel * 1000);
+        }
     }
 
     getEarliestUnhitNote(trackNumber: number) {
@@ -76,23 +83,35 @@ export let timeHandler: TimeHandler;
 export let gameStarted: boolean = false;
 
 export function startGame() {
+    if(gameStarted) {
+        cleanupGame();
+    }
     let bindingManager: KeyBindingManager = new KeyBindingManager();
     document.addEventListener("keydown", KeyHandler.keyDown);
     document.addEventListener("keyup", KeyHandler.keyUp);
     bindingManager.getBindings(noteManager.tracks.length);
     timeHandler = new TimeHandler(performance.now());
-    gameStarted = true;
     accuracyManager.timeHandler = timeHandler;
     KeyHandler.timeHandler = timeHandler;
     KeyHandler.accuracyManager = accuracyManager;
     KeyHandler.bindingManager = bindingManager;
+    gameStarted = true;
 }
 
 export function cleanupGame() {
     if(gameStarted) {
         document.removeEventListener("keydown", KeyHandler.keyDown);
         document.removeEventListener("keyup", KeyHandler.keyUp);
+        resetAllHitNotes();
         gameStarted = false;
+    }
+}
+
+function resetAllHitNotes() {
+    for(let i = 0; i < noteManager.tracks.length; i++) {
+        for(let j = 0; j < noteManager.tracks[i].length; j++) {
+            noteManager.tracks[i][j].isHit = false;
+        }
     }
 }
 

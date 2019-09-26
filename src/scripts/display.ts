@@ -1,6 +1,6 @@
 import * as p5 from "p5";
 import {accuracyManager, gameStarted, timeHandler} from "./gameplay";
-import {Config} from "./config";
+import {Config, ScrollDirection} from "./config";
 
 enum NoteType {
     NONE = "0",
@@ -20,16 +20,16 @@ export class Note {
 let canvas: HTMLCanvasElement;
 export let noteManager: NoteManager;
 const gameContainer = document.getElementById("graphical-display-section");
-export let config: Config = new Config(0.005, 20);
+export let config: Config = new Config(0.005, 60, ScrollDirection.UP);
 
 const sketch = (p: p5): void => {
-    p.setup = function() {
+    p.setup = function () {
         canvas = p.createCanvas(400, 600).elt;
     };
 
-    p.draw = function() {
-        if(noteManager != null) {
-            if(gameStarted) {
+    p.draw = function () {
+        if (noteManager != null) {
+            if (gameStarted) {
                 noteManager.currentTime = timeHandler.getGameTime(performance.now()) / 1000;
             }
             noteManager.draw();
@@ -47,7 +47,7 @@ export function prepareDisplay(tracks: Note[][]) {
 }
 
 function canvasScrolled(e: WheelEvent) {
-    let timeChange = e.deltaY * noteManager.secondsPerPixel;
+    let timeChange = e.deltaY * config.secondsPerPixel;
     noteManager.currentTime += timeChange;
 }
 
@@ -147,21 +147,17 @@ class Receptor {
 
 export class NoteManager {
     tracks: Note[][];
-    secondsPerPixel: number;
     currentTime: number;
-    receptors: Receptor[];
     onScreenNotes: Note[][];
 
     constructor(tracks: Note[][], initialTime: number) {
         this.tracks = tracks;
-        this.secondsPerPixel = config.secondsPerPixel;
         this.currentTime = initialTime;
-        this.receptors = this.getInitialReceptors(tracks.length);
     }
 
     getInitialReceptors(numReceptors: number): Receptor[] {
-        let receptors = []
-        for(let i = 0; i < numReceptors; i++) {
+        let receptors = [];
+        for (let i = 0; i < numReceptors; i++) {
             receptors.push(new Receptor(this.getNoteX(i, numReceptors), config.receptorYPosition));
         }
         return receptors;
@@ -199,7 +195,7 @@ export class NoteManager {
 
     drawNote(note: Note, trackNumber: number, numTracks: number, currentTime: number) {
         this.onScreenNotes[trackNumber].push(note);
-        if(!note.isHit) {
+        if (!note.isHit) {
             let x = this.getNoteX(trackNumber, numTracks);
             let y = this.getNoteY(note.time, currentTime);
             new NoteDisplay(x, y, note.type).draw();
@@ -227,7 +223,7 @@ export class NoteManager {
 
     clear() {
         let ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width / 2, canvas.height / 2);
+        ctx.clearRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
     }
 
     getLeastTime(currentTime: number) {
@@ -235,17 +231,30 @@ export class NoteManager {
     }
 
     getGreatestTime(leastTime: number) {
-        return leastTime + (canvas.height / 2) * this.secondsPerPixel;
+        return leastTime + this.getCanvasHeight() * config.secondsPerPixel;
     }
 
     getNoteX(trackNumber: number, numTracks: number) {
-        let noteTrackSize = (canvas.width / 2) / (numTracks + (numTracks + 1) / 2);
+        let noteTrackSize = this.getCanvasWidth() / (numTracks + (numTracks + 1) / 2);
         return (0.5 + trackNumber * 1.5) * noteTrackSize;
     }
 
     getNoteY(noteTime: number, currentTime: number) {
         let timeDistance = noteTime - currentTime;
-        return timeDistance / this.secondsPerPixel;
+        if(config.scrollDirection == ScrollDirection.UP) {
+            return timeDistance / config.secondsPerPixel;
+        }
+        else {
+            return this.getCanvasHeight() - (timeDistance / config.secondsPerPixel);
+        }
+    }
+
+    getCanvasWidth(): number {
+        return canvas.width / 2;
+    }
+
+    getCanvasHeight(): number {
+        return canvas.height / 2;
     }
 
     drawAllConnectors(leastTime: number, greatestTime: number) {
@@ -301,8 +310,8 @@ export class NoteManager {
     }
 
     drawReceptors() {
-        for (let i = 0; i < this.receptors.length; i++) {
-            this.receptors[i].draw();
+        for (let i = 0; i < this.tracks.length; i++) {
+            new Receptor(this.getNoteX(i, this.tracks.length), config.receptorYPosition).draw();
         }
     }
 }

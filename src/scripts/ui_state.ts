@@ -137,7 +137,7 @@ export function setUIState(simfile_state: SimfileState, args: any = undefined) {
             uploadSimfileSection.show();
             startParseSection.show();
             selectModeSection.show(<Mode[]> args);
-            finishParseSection.hide()
+            finishParseSection.hide();
             graphicalDisplaySection.hide();
             gameplaySettingsSection.hide();
             break;
@@ -145,7 +145,7 @@ export function setUIState(simfile_state: SimfileState, args: any = undefined) {
             uploadSimfileSection.show();
             startParseSection.show();
             selectModeSection.show(<Mode[]> args);
-            finishParseSection.show()
+            finishParseSection.show();
             graphicalDisplaySection.hide();
             gameplaySettingsSection.hide();
             break;
@@ -153,7 +153,7 @@ export function setUIState(simfile_state: SimfileState, args: any = undefined) {
             uploadSimfileSection.show();
             startParseSection.show();
             selectModeSection.show(null);
-            finishParseSection.show()
+            finishParseSection.show();
             graphicalDisplaySection.show();
             gameplaySettingsSection.show(<Note[][]> args);
             break;
