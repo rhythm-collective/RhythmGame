@@ -1,5 +1,6 @@
 import {config, Note, noteManager, NoteManager} from "./display";
 import {ScrollDirection} from "./config";
+import {playAudio} from "./index";
 
 class AccuracyManager {
     noteManager: NoteManager;
@@ -83,6 +84,7 @@ export let timeHandler: TimeHandler;
 export let gameStarted: boolean = false;
 
 export function startGame() {
+    delayNotes();
     if(gameStarted) {
         cleanupGame();
     }
@@ -95,7 +97,17 @@ export function startGame() {
     KeyHandler.timeHandler = timeHandler;
     KeyHandler.accuracyManager = accuracyManager;
     KeyHandler.bindingManager = bindingManager;
+    playAudio();
     gameStarted = true;
+}
+
+function delayNotes() {
+    let delay: number = parseFloat((<HTMLInputElement>document.getElementById("audio-start-delay")).value);
+    for(let i = 0; i < noteManager.tracks.length; i++) {
+        for(let j = 0; j < noteManager.tracks[i].length; j++) {
+            noteManager.tracks[i][j].time -= delay / 1000;
+        }
+    }
 }
 
 export function cleanupGame() {

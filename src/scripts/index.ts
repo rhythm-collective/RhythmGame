@@ -1,7 +1,14 @@
 import {config, Note, prepareDisplay} from "./display";
 import {getNoteTimesForMode, getPartialParse, PartialParse} from "./parsing";
 import {cleanupGame, startGame} from "./gameplay";
-import {setUIState, SimfileState} from "./ui_state";
+import {
+    AudioFileState,
+    disableLoadAudioFileButton,
+    disablePlayButton,
+    SimfileState,
+    updateAudioFileState,
+    updateSimfileState
+} from "./ui_state";
 import {ConfigOption} from "./config";
 
 export class Mode {
@@ -11,39 +18,88 @@ export class Mode {
     public id: number;
 }
 
-let reader: FileReader;
+let simfileReader: FileReader;
+let audioFileReader: FileReader;
+let audioContext: AudioContext;
+let audioSource: AudioBufferSourceNode;
 let localStartedParse: PartialParse;
-setUIState(SimfileState.NO_SIMFILE);
-document.getElementById("upload").addEventListener("change", simfileUploaded);
+updateSimfileState(SimfileState.NO_SIMFILE);
+updateAudioFileState(AudioFileState.NO_AUDIO_FILE);
+//document.getElementById("upload").addEventListener("change", simfileUploaded);
 
-export function loadFile(
+export function loadTextFile(
     file: File,
     listener: (this: FileReader, ev: ProgressEvent<FileReader>) => any,
     options?: boolean | AddEventListenerOptions
 ) {
-    reader = new FileReader();
-    reader.readAsText(file);
-    reader.addEventListener("loadend", listener, options);
+    simfileReader = new FileReader();
+    simfileReader.readAsText(file);
+    simfileReader.addEventListener("loadend", listener, options);
+}
+
+export function loadSoundFile(
+    file: File,
+    listener: (this: FileReader, ev: ProgressEvent<FileReader>) => any,
+    options?: boolean | AddEventListenerOptions
+) {
+    audioFileReader = new FileReader();
+    audioFileReader.readAsArrayBuffer(file);
+    audioFileReader.addEventListener("loadend", listener, options);
+}
+
+export function audioFileUploaded() {
+    updateAudioFileState(AudioFileState.AUDIO_FILE_UPLOADED);
+}
+
+export function bufferAudioFile() {
+    disableLoadAudioFileButton();
+    let audioUpload: HTMLInputElement = <HTMLInputElement>(
+        document.getElementById("audio-upload")
+    )
+    let file: File = audioUpload.files[0];
+    loadSoundFile(file, onAudioLoaded);
+}
+
+function onAudioLoaded() {
+    // @ts-ignore
+    audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    audioSource = audioContext.createBufferSource();
+    audioContext.decodeAudioData(<ArrayBuffer>audioFileReader.result).then(audioBuffered,
+        function(e){ console.log("Error with decoding audio data" + e.err); });
+}
+
+function audioBuffered(buffer: AudioBuffer) {
+    audioSource.buffer = buffer;
+    audioSource.connect(audioContext.destination);
+    updateAudioFileState(AudioFileState.AUDIO_FILE_LOADED);
+}
+
+export function playAudio() {
+    audioSource.start(0);
+}
+
+export function stopAudio() {
+    audioSource.stop(0);
 }
 
 // noinspection JSUnusedGlobalSymbols,JSUnusedLocalSymbols
 export function simfileUploaded() {
     localStartedParse = undefined;
     cleanupGame();
-    setUIState(SimfileState.SIMFILE_UPLOADED);
+    updateSimfileState(SimfileState.SIMFILE_UPLOADED);
 }
 
 // noinspection JSUnusedLocalSymbols
 export function preparseSimfile() {
-    let upload: HTMLInputElement = <HTMLInputElement>(
+    let simfileUpload: HTMLInputElement = <HTMLInputElement>(
         document.getElementById("upload")
     );
-    let file: File = upload.files[0];
-    loadFile(file, onFileLoaded);
+    let file: File = simfileUpload.files[0];
+    loadTextFile(file, onFileLoaded);
 }
 
 function onFileLoaded() {
-    let fileContents: string = <string>reader.result;
+    let fileContents: string = <string>simfileReader.result;
     startParse(fileContents);
 }
 
@@ -51,7 +107,7 @@ function startParse(fileContents: string) {
     localStartedParse = getPartialParse(fileContents);
     let modeOptions: Mode[] = getModeOptionsForDisplay(localStartedParse.modes);
     cleanupGame();
-    setUIState(SimfileState.SIMFILE_PREPARSED, modeOptions);
+    updateSimfileState(SimfileState.SIMFILE_PREPARSED, modeOptions);
 }
 
 export function getModeOptionsForDisplay(modesAsStrings: Map<string, string>[]) {
@@ -110,7 +166,7 @@ function difficultyRank(difficulty: string) {
 
 export function modeSelected() {
     cleanupGame();
-    setUIState(SimfileState.DIFFICULTY_SELECTED);
+    updateSimfileState(SimfileState.DIFFICULTY_SELECTED);
 }
 
 // noinspection JSUnusedLocalSymbols
@@ -119,7 +175,7 @@ export function finishParse() {
     let tracks: Note[][] = getNoteTimesForMode(selectedMode, localStartedParse);
     drawParse(tracks);
     cleanupGame();
-    setUIState(SimfileState.SIMFILE_PARSED, tracks);
+    updateSimfileState(SimfileState.SIMFILE_PARSED, tracks);
     document.addEventListener("keydown", (e) => (keyBindingManager.keyDown(e)));
 }
 
@@ -142,6 +198,7 @@ class KeyBindingUIManager {
 let keyBindingManager: KeyBindingUIManager = new KeyBindingUIManager();
 
 export function goToPrepareGameplay() {
+    disablePlayButton();
     startGame();
 }
 
