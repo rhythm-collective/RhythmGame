@@ -9,10 +9,16 @@ export class PartialParse {
 
 export class FullParse {
     metaData: Map<string, string>;
+    modes: Map<string, string>[];
     offset: number;
     bpms: [number, number][];
     stops: [number, number][];
     tracks: Note[][];
+
+    constructor(partialParse: PartialParse) {
+        this.metaData = partialParse.metaData;
+        this.modes = partialParse.modes;
+    }
 }
 
 export function getPartialParse(fileContents: string) {
@@ -59,7 +65,8 @@ function cleanMetaDataString(string: string): string {
 
 /* Step Two Of Parsing */
 
-export function getNoteTimesForMode(modeIndex: number, partialParse: PartialParse): Note[][] {
+export function getFullParse(modeIndex: number, partialParse: PartialParse): Note[][] {
+    let fullParse = new FullParse(partialParse);
     let unparsedNotes: string = partialParse.modes[modeIndex].get("notes");
     let unparsedArray: string[] = unparsedNotes.split("\n");
     let measures: string[][] = getMeasures(unparsedArray);

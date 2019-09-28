@@ -144,8 +144,10 @@ class KeyBindingMenu {
     getKeyBindingMenu(numTracks: number): string {
         let keyBindingOptions: string = "";
         for(let i = 0; i < numTracks; i++) {
-            keyBindingOptions += '<input type="button" value="Key #' + (i + 1) + '" onclick="simparser.bindingClicked(' + i + ')">' +
-                '<input type="text" size="10" style="margin: 0px 20px 0px 5px;" id="key-binding-field-' + i + '">';
+            keyBindingOptions += '<span class="key-binding-option">' +
+                '<input type="button" value="Key #' + (i + 1) + '" onclick="simparser.bindingClicked(' + i + ')">' +
+                '<input type="text" size="10" style="margin: 0px 20px 0px 5px;" id="key-binding-field-' + i + '">' +
+                '</span>';
         }
         return keyBindingOptions;
     }

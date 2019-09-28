@@ -1,5 +1,5 @@
 import {config, Note, prepareDisplay} from "./display";
-import {getNoteTimesForMode, getPartialParse, PartialParse} from "./parsing";
+import {getFullParse, getPartialParse, PartialParse} from "./parsing";
 import {cleanupGame, startGame} from "./gameplay";
 import {
     AudioFileState,
@@ -172,15 +172,11 @@ export function modeSelected() {
 // noinspection JSUnusedLocalSymbols
 export function finishParse() {
     let selectedMode: number = parseInt((<HTMLInputElement>document.getElementById("mode-select")).value);
-    let tracks: Note[][] = getNoteTimesForMode(selectedMode, localStartedParse);
-    drawParse(tracks);
+    let tracks: Note[][] = getFullParse(selectedMode, localStartedParse);
+    prepareDisplay(tracks);
     cleanupGame();
     updateSimfileState(SimfileState.SIMFILE_PARSED, tracks);
     document.addEventListener("keydown", (e) => (keyBindingManager.keyDown(e)));
-}
-
-function drawParse(tracks: Note[][]) {
-    prepareDisplay(tracks);
 }
 
 class KeyBindingUIManager {
@@ -217,6 +213,9 @@ export function configUpdated(configOptionCode: number) {
             break;
         case ConfigOption.SCROLL_DIRECTION:
             config.updateScrollDirection();
+            break;
+        case ConfigOption.AUDIO_START_DELAY:
+            config.updateAudioStartDelay();
             break;
     }
 }

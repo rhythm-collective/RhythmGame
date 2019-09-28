@@ -38,8 +38,8 @@
                 <option value="UP">Up</option>
                 <option value="DOWN">Down</option>
             </select><br>
-            <label for="audio-start-delay" class="gameplay-option-label">Audio Start Delay</label>
-            <input id="audio-start-delay" type="text" value="0"><br>
+            <label for="audio-start-delay" class="gameplay-option-label">Audio Start Delay (ms)</label>
+            <input id="audio-start-delay" type="text" value="0" onchange="simparser.configUpdated(3)"><br>
             <span id="key-binding-menu"></span>
         </span>
         <input id="play-button" type="button" value="Play" style="display: none;" onclick="simparser.goToPrepareGameplay()">

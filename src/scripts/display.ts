@@ -20,7 +20,7 @@ export class Note {
 let canvas: HTMLCanvasElement;
 export let noteManager: NoteManager;
 const gameContainer = document.getElementById("graphical-display-section");
-export let config: Config = new Config(0.005, 60, ScrollDirection.UP);
+export let config: Config = new Config(0.005, 60, ScrollDirection.UP, 0);
 
 const sketch = (p: p5): void => {
     p.setup = function () {
@@ -41,7 +41,7 @@ new p5(sketch, gameContainer);
 
 //TODO: Prevent duplicating actions in this function when changing input file
 export function prepareDisplay(tracks: Note[][]) {
-    noteManager = new NoteManager(tracks, 1);
+    noteManager = new NoteManager(tracks);
     accuracyManager.noteManager = noteManager;
     canvas.addEventListener("wheel", e => canvasScrolled(e));
 }
@@ -150,17 +150,9 @@ export class NoteManager {
     currentTime: number;
     onScreenNotes: Note[][];
 
-    constructor(tracks: Note[][], initialTime: number) {
+    constructor(tracks: Note[][]) {
         this.tracks = tracks;
-        this.currentTime = initialTime;
-    }
-
-    getInitialReceptors(numReceptors: number): Receptor[] {
-        let receptors = [];
-        for (let i = 0; i < numReceptors; i++) {
-            receptors.push(new Receptor(this.getNoteX(i, numReceptors), config.receptorYPosition));
-        }
-        return receptors;
+        this.currentTime = 0;
     }
 
     draw() {
@@ -170,8 +162,8 @@ export class NoteManager {
     }
 
     drawNotesAndConnectors() {
-        let leastTime = this.getLeastTime(this.currentTime);
-        let greatestTime = this.getGreatestTime(leastTime);
+        let leastTime = this.getLeastTime(this.currentTime - config.additionalOffset);
+        let greatestTime = this.getGreatestTime(this.currentTime - config.additionalOffset);
         this.drawAllConnectors(leastTime, greatestTime);
         this.drawAllNotes(leastTime, greatestTime);
     }
@@ -181,7 +173,7 @@ export class NoteManager {
         for (let i = 0; i < this.tracks.length; i++) {
             this.onScreenNotes.push([]);
             this.drawNotesInTrack(leastTime, greatestTime, this.tracks[i], i,
-                this.tracks.length, this.currentTime);
+                this.tracks.length, this.currentTime - config.additionalOffset);
         }
     }
 
@@ -227,11 +219,25 @@ export class NoteManager {
     }
 
     getLeastTime(currentTime: number) {
-        return currentTime;
+        let receptorGap: number; // the gap in the LATE direction
+        if(config.scrollDirection == ScrollDirection.UP) {
+            receptorGap = config.receptorYPosition;
+        }
+        else {
+            receptorGap = this.getCanvasHeight() - config.receptorYPosition;
+        }
+        return currentTime - (receptorGap * config.secondsPerPixel);
     }
 
-    getGreatestTime(leastTime: number) {
-        return leastTime + this.getCanvasHeight() * config.secondsPerPixel;
+    getGreatestTime(currentTime: number) {
+        let receptorGap: number; // the gap in the EARLY direction
+        if(config.scrollDirection == ScrollDirection.UP) {
+            receptorGap = this.getCanvasHeight() - config.receptorYPosition;
+        }
+        else {
+            receptorGap = config.receptorYPosition;
+        }
+        return currentTime + (this.getCanvasHeight() * config.secondsPerPixel);
     }
 
     getNoteX(trackNumber: number, numTracks: number) {
@@ -242,10 +248,10 @@ export class NoteManager {
     getNoteY(noteTime: number, currentTime: number) {
         let timeDistance = noteTime - currentTime;
         if(config.scrollDirection == ScrollDirection.UP) {
-            return timeDistance / config.secondsPerPixel;
+            return config.receptorYPosition + (timeDistance / config.secondsPerPixel);
         }
         else {
-            return this.getCanvasHeight() - (timeDistance / config.secondsPerPixel);
+            return config.receptorYPosition - (timeDistance / config.secondsPerPixel);
         }
     }
 
@@ -260,7 +266,7 @@ export class NoteManager {
     drawAllConnectors(leastTime: number, greatestTime: number) {
         for (let i = 0; i < this.tracks.length; i++) {
             this.drawConnectorsInTrack(leastTime, greatestTime, this.tracks[i], i,
-                this.tracks.length, this.currentTime);
+                this.tracks.length, this.currentTime - config.additionalOffset);
         }
     }
 

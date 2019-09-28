@@ -16,3 +16,7 @@
 .gameplay-option-label {
     margin-right: 20px;
 }
+
+.key-binding-option {
+    white-space: nowrap;
+}

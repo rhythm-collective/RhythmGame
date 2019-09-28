@@ -9,17 +9,21 @@ export enum ConfigOption {
     SECONDS_PER_PIXEL,
     RECEPTOR_Y_POSITION,
     SCROLL_DIRECTION,
+    AUDIO_START_DELAY,
 }
 
 export class Config {
     secondsPerPixel: number;
     receptorYPosition: number;
     scrollDirection: ScrollDirection;
+    additionalOffset: number;
 
-    constructor(secondsPerPixel: number, receptorYPosition: number, scrollDirection: ScrollDirection) {
+    constructor(secondsPerPixel: number, receptorYPosition: number, scrollDirection: ScrollDirection,
+                additionalOffset: number) {
         this.secondsPerPixel = secondsPerPixel;
         this.receptorYPosition = receptorYPosition;
         this.scrollDirection = scrollDirection;
+        this.additionalOffset = additionalOffset;
     }
 
     updateSecondsPerPixel() {
@@ -44,6 +48,13 @@ export class Config {
         }
     }
 
+    updateAudioStartDelay() {
+        let additionalOffset: number = this.getAdditionalOffset();
+        if(additionalOffset != null && additionalOffset != NaN) {
+            this.additionalOffset = additionalOffset
+        }
+    }
+
     private getSecondsPerPixel(): number {
         return 1 / parseFloat((<HTMLInputElement>document.getElementById("scroll-speed")).value);
     }
@@ -65,5 +76,9 @@ export class Config {
                 <HTMLInputElement>document.getElementById("scroll-direction")
             ).value as keyof typeof ScrollDirection
         ];
+    }
+
+    private getAdditionalOffset(): number {
+        return parseFloat((<HTMLInputElement>document.getElementById("audio-start-delay")).value) / 1000;
     }
 }
