@@ -1,0 +1,51 @@
+<html>
+<head>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="row">
+    <div class="column">
+        <div class="row">
+            <div class="column">
+                <span id="upload-simfile-section">
+                    <input type="file" accept=".sm" id="upload" onchange="simparser.simfileUploaded()"><br>
+                </span>
+                <span id="start-parse-section" style="display: none">
+                    <input type="button" value="Start Parse" onclick="simparser.preparseSimfile()"><br>
+                </span>
+            </div>
+            <div class="column">
+                <span id="upload-audio-file-section">
+                    <input type="file" accept="audio/*" id="audio-upload" onchange="simparser.audioFileUploaded()"><br>
+                </span>
+                <input type="button" id="load-audio-file-section" value="Load File" style="display: none;" onclick="simparser.bufferAudioFile()"><br>
+            </div>
+        </div>
+        <span id="select-mode-section" style="display: none;"></span>
+        <span id="finish-parse-section" style="display: none;">
+            <input type="button" value="Finish Parse" onclick="simparser.finishParse()"><br>
+        </span>
+        <span id="graphical-display-section" style="display: none"></span>
+    </div>
+    <div class="column">
+        <span id="gameplay-settings-section">
+            <label for="scroll-speed" class="gameplay-option-label">Scroll Speed (px/sec)</label>
+            <input id="scroll-speed" type="text" value="200" onchange="simparser.configUpdated(0)"><br>
+            <label for="receptor-position" class="gameplay-option-label">Receptor Position (%)</label>
+            <input id="receptor-position" type="text" value="10" onchange="simparser.configUpdated(1)"><br>
+            <label for="scroll-direction" class="gameplay-option-label">Scroll Direction</label>
+            <select id="scroll-direction" onchange="simparser.configUpdated(2)">
+                <option value="UP">Up</option>
+                <option value="DOWN">Down</option>
+            </select><br>
+            <label for="audio-start-delay" class="gameplay-option-label">Audio Start Delay</label>
+            <input id="audio-start-delay" type="text" value="0"><br>
+            <span id="key-binding-menu"></span>
+        </span>
+        <input id="play-button" type="button" value="Play" style="display: none;" onclick="simparser.goToPrepareGameplay()">
+    </div>
+</div>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.9.0/p5.js" integrity="sha256-nd3JLOQlNGixlXNjD4rPEwBNtIXCcsPW7jQW2C8HM/w=" crossorigin="anonymous"></script>
+<script src="../dist/bundle.js"></script>
+</html>
