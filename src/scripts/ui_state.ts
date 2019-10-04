@@ -1,5 +1,6 @@
 import {Mode} from "./index";
-import {Note} from "./display";
+import {Note} from "./note_manager";
+import {bindingManager} from "./gameplay";
 
 export enum SimfileState {
     NO_SIMFILE,
@@ -133,12 +134,13 @@ class GameplaySettingsSection {
 }
 
 class KeyBindingMenu {
-    show(tracks: Note[][] | null) {
-        if (tracks != null) {
-            document.getElementById(UIID.KEY_BINDING_MENU).innerHTML =
-                this.getKeyBindingMenu(tracks.length) + '<br>';
-        }
+    currentNumTracks: number = 4;
+
+    show(numTracks = this.currentNumTracks) {
+        document.getElementById(UIID.KEY_BINDING_MENU).innerHTML =
+            this.getKeyBindingMenu(numTracks) + '<br>';
         document.getElementById(UIID.KEY_BINDING_MENU).style.display = "";
+        this.currentNumTracks = numTracks;
     }
 
     getKeyBindingMenu(numTracks: number): string {
@@ -146,10 +148,15 @@ class KeyBindingMenu {
         for(let i = 0; i < numTracks; i++) {
             keyBindingOptions += '<span class="key-binding-option">' +
                 '<input type="button" value="Key #' + (i + 1) + '" onclick="simparser.bindingClicked(' + i + ')">' +
-                '<input type="text" size="10" style="margin: 0px 20px 0px 5px;" id="key-binding-field-' + i + '">' +
+                '<input disabled type="text" size="10"' + this.getCurrentBinding(i) + 'style="margin: 0px 20px 0px 5px;" id="key-binding-field-' + i + '">' +
                 '</span>';
         }
         return keyBindingOptions;
+    }
+
+    getCurrentBinding(trackNumber: number) {
+        let key = bindingManager.getKeyForTrack(trackNumber);
+        return key == null ? '' : 'value="' + key.toUpperCase() + '"';
     }
 
     hide() {
@@ -180,7 +187,7 @@ let selectModeSection: SelectModeSection = new SelectModeSection();
 let finishParseSection: FinishParseSection = new FinishParseSection();
 let graphicalDisplaySection: GraphicalDisplaySection = new GraphicalDisplaySection();
 let gameplaySettingsSection: GameplaySettingsSection = new GameplaySettingsSection();
-let keyBindingMenu: KeyBindingMenu = new KeyBindingMenu();
+export let keyBindingMenu: KeyBindingMenu = new KeyBindingMenu();
 let playButton: PlayButton = new PlayButton();
 
 export function disablePlayButton() {
@@ -191,7 +198,7 @@ export function disableLoadAudioFileButton() {
     loadAudioFileButton.disable();
 }
 
-export function updateSimfileState(simfileState_: SimfileState, args: any = undefined) {
+export function updateSimfileState(simfileState_: SimfileState, args: Mode[] | number = undefined) {
     switch(simfileState_) {
         case SimfileState.NO_SIMFILE:
             uploadSimfileSection.show();
@@ -200,7 +207,7 @@ export function updateSimfileState(simfileState_: SimfileState, args: any = unde
             finishParseSection.hide();
             graphicalDisplaySection.hide();
             gameplaySettingsSection.show();
-            keyBindingMenu.hide();
+            keyBindingMenu.show();
             break;
         case SimfileState.SIMFILE_UPLOADED:
             uploadSimfileSection.show();
@@ -209,7 +216,7 @@ export function updateSimfileState(simfileState_: SimfileState, args: any = unde
             finishParseSection.hide();
             graphicalDisplaySection.hide();
             gameplaySettingsSection.show();
-            keyBindingMenu.hide();
+            keyBindingMenu.show();
             break;
         case SimfileState.SIMFILE_PREPARSED:
             uploadSimfileSection.show();
@@ -218,7 +225,7 @@ export function updateSimfileState(simfileState_: SimfileState, args: any = unde
             finishParseSection.hide();
             graphicalDisplaySection.hide();
             gameplaySettingsSection.show();
-            keyBindingMenu.hide();
+            keyBindingMenu.show();
             break;
         case SimfileState.DIFFICULTY_SELECTED:
             uploadSimfileSection.show();
@@ -227,7 +234,7 @@ export function updateSimfileState(simfileState_: SimfileState, args: any = unde
             finishParseSection.show();
             graphicalDisplaySection.hide();
             gameplaySettingsSection.show();
-            keyBindingMenu.hide();
+            keyBindingMenu.show();
             break;
         case SimfileState.SIMFILE_PARSED:
             uploadSimfileSection.show();
@@ -236,7 +243,7 @@ export function updateSimfileState(simfileState_: SimfileState, args: any = unde
             finishParseSection.show();
             graphicalDisplaySection.show();
             gameplaySettingsSection.show();
-            keyBindingMenu.show(<Note[][]> args);
+            keyBindingMenu.show(<number> args);
             break;
     }
     simfileState = simfileState_;

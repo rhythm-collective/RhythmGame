@@ -1,26 +1,14 @@
 import * as p5 from "p5";
 import {accuracyManager, gameStarted, timeHandler} from "./gameplay";
 import {Config, ScrollDirection} from "./config";
-
-enum NoteType {
-    NONE = "0",
-    NORMAL = "1",
-    HOLD_HEAD = "2",
-    TAIL = "3",
-    ROLL_HEAD = "4",
-    MINE = "M",
-}
-
-export class Note {
-    type: string;
-    time: number;
-    isHit: boolean;
-}
+import {Note, NoteManager, NoteType} from "./note_manager";
 
 let canvas: HTMLCanvasElement;
-export let noteManager: NoteManager;
+export let displayManager: DisplayManager;
+let noteManager;
 const gameContainer = document.getElementById("graphical-display-section");
 export let config: Config = new Config(0.005, 60, ScrollDirection.UP, 0);
+config.updateAccuracySettings();
 
 const sketch = (p: p5): void => {
     p.setup = function () {
@@ -28,11 +16,11 @@ const sketch = (p: p5): void => {
     };
 
     p.draw = function () {
-        if (noteManager != null) {
+        if (displayManager != null) {
             if (gameStarted) {
-                noteManager.currentTime = timeHandler.getGameTime(performance.now()) / 1000;
+                displayManager.currentTime = timeHandler.getGameTime(performance.now()); // comment out for debug
             }
-            noteManager.draw();
+            displayManager.draw();
         }
     };
 };
@@ -42,13 +30,15 @@ new p5(sketch, gameContainer);
 //TODO: Prevent duplicating actions in this function when changing input file
 export function prepareDisplay(tracks: Note[][]) {
     noteManager = new NoteManager(tracks);
+    displayManager = new DisplayManager(noteManager);
+    accuracyManager.displayManager = displayManager;
     accuracyManager.noteManager = noteManager;
     canvas.addEventListener("wheel", e => canvasScrolled(e));
 }
 
 function canvasScrolled(e: WheelEvent) {
     let timeChange = e.deltaY * config.secondsPerPixel;
-    noteManager.currentTime += timeChange;
+    displayManager.currentTime += timeChange;
 }
 
 class NoteDisplay {
@@ -70,7 +60,7 @@ class NoteDisplay {
             case NoteType.NORMAL:
                 ctx.fillRect(this.x, this.y, 20, 20);
                 break;
-            case NoteType.HOLD_HEAD: // Hold head
+            case NoteType.HOLD_HEAD:
                 ctx.fillRect(this.x, this.y, 20, 20);
                 ctx.font = "20px Arial";
                 ctx.textAlign = "center";
@@ -145,13 +135,12 @@ class Receptor {
     }
 }
 
-export class NoteManager {
-    tracks: Note[][];
-    currentTime: number;
-    onScreenNotes: Note[][];
+export class DisplayManager {
+    noteManager: NoteManager;
+    currentTime: number; // in seconds
 
-    constructor(tracks: Note[][]) {
-        this.tracks = tracks;
+    constructor(noteManager: NoteManager) {
+        this.noteManager = noteManager;
         this.currentTime = 0;
     }
 
@@ -169,48 +158,27 @@ export class NoteManager {
     }
 
     drawAllNotes(leastTime: number, greatestTime: number) {
-        this.onScreenNotes = [];
-        for (let i = 0; i < this.tracks.length; i++) {
-            this.onScreenNotes.push([]);
-            this.drawNotesInTrack(leastTime, greatestTime, this.tracks[i], i,
-                this.tracks.length, this.currentTime - config.additionalOffset);
+        let numTracks = this.noteManager.tracks.length;
+        for (let i = 0; i < numTracks; i++) {
+            this.drawNotesInTrack(leastTime, greatestTime, i, numTracks,
+                this.currentTime - config.additionalOffset);
         }
     }
 
-    drawNotesInTrack(leastTime: number, greatestTime: number, track: Note[], trackNumber: number,
+    drawNotesInTrack(leastTime: number, greatestTime: number, trackNumber: number,
                      numTracks: number, currentTime: number) {
-        let bounds = this.getFirstAndLastNotes(leastTime, greatestTime, track);
-        for (let i = bounds.start; i <= bounds.stop; i++) {
-            this.drawNote(track[i], trackNumber, numTracks, currentTime);
+        let notes = this.noteManager.getNotesByTimeRange(leastTime, greatestTime, trackNumber);
+        for (let i = 0; i < notes.length; i++) {
+            this.drawNote(notes[i], trackNumber, numTracks, currentTime);
         }
     }
 
     drawNote(note: Note, trackNumber: number, numTracks: number, currentTime: number) {
-        this.onScreenNotes[trackNumber].push(note);
         if (!note.isHit) {
             let x = this.getNoteX(trackNumber, numTracks);
             let y = this.getNoteY(note.time, currentTime);
             new NoteDisplay(x, y, note.type).draw();
         }
-    }
-
-    //TODO: properly indicate when there are NO notes to draw
-    getFirstAndLastNotes(leastTime: number, greatestTime: number, track: Note[]) {
-        let i;
-        for (i = 0; i < track.length; i++) {
-            if (track[i].time > leastTime) {
-                break;
-            }
-        }
-        i = Math.max(0, i - 1);
-        let j;
-        for (j = i; j < track.length; j++) {
-            if (track[j].time > greatestTime) {
-                break;
-            }
-        }
-        j = Math.max(0, j - 1);
-        return {start: i, stop: j};
     }
 
     clear() {
@@ -264,9 +232,10 @@ export class NoteManager {
     }
 
     drawAllConnectors(leastTime: number, greatestTime: number) {
-        for (let i = 0; i < this.tracks.length; i++) {
-            this.drawConnectorsInTrack(leastTime, greatestTime, this.tracks[i], i,
-                this.tracks.length, this.currentTime - config.additionalOffset);
+        let tracks = this.noteManager.tracks;
+        for (let i = 0; i < tracks.length; i++) {
+            this.drawConnectorsInTrack(leastTime, greatestTime, tracks[i], i,
+                tracks.length, this.currentTime - config.additionalOffset);
         }
     }
 
@@ -316,8 +285,9 @@ export class NoteManager {
     }
 
     drawReceptors() {
-        for (let i = 0; i < this.tracks.length; i++) {
-            new Receptor(this.getNoteX(i, this.tracks.length), config.receptorYPosition).draw();
+        let numTracks = this.noteManager.tracks.length;
+        for (let i = 0; i < numTracks; i++) {
+            new Receptor(this.getNoteX(i, numTracks), config.receptorYPosition).draw();
         }
     }
 }

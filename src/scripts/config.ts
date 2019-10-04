@@ -1,4 +1,5 @@
-import {noteManager} from "./display";
+import {displayManager} from "./display";
+import {Accuracy} from "./gameplay";
 
 export enum ScrollDirection {
     UP,
@@ -10,6 +11,7 @@ export enum ConfigOption {
     RECEPTOR_Y_POSITION,
     SCROLL_DIRECTION,
     AUDIO_START_DELAY,
+    ACCURACY_SETTINGS,
 }
 
 export class Config {
@@ -17,6 +19,7 @@ export class Config {
     receptorYPosition: number;
     scrollDirection: ScrollDirection;
     additionalOffset: number;
+    accuracySettings: Accuracy[];
 
     constructor(secondsPerPixel: number, receptorYPosition: number, scrollDirection: ScrollDirection,
                 additionalOffset: number) {
@@ -55,6 +58,10 @@ export class Config {
         }
     }
 
+    updateAccuracySettings() {
+        this.accuracySettings = this.getAccuracySettings();
+    }
+
     private getSecondsPerPixel(): number {
         return 1 / parseFloat((<HTMLInputElement>document.getElementById("scroll-speed")).value);
     }
@@ -64,10 +71,10 @@ export class Config {
             (<HTMLInputElement>document.getElementById("receptor-position")).value
         ) / 100;
         if (this.scrollDirection == ScrollDirection.UP) {
-            return receptorPositionPercentage * noteManager.getCanvasHeight();
+            return receptorPositionPercentage * displayManager.getCanvasHeight();
         }
         else {
-            return (1 - receptorPositionPercentage) * noteManager.getCanvasHeight();
+            return (1 - receptorPositionPercentage) * displayManager.getCanvasHeight();
         }
     }
 
@@ -80,5 +87,15 @@ export class Config {
 
     private getAdditionalOffset(): number {
         return parseFloat((<HTMLInputElement>document.getElementById("audio-start-delay")).value) / 1000;
+    }
+
+    private getAccuracySettings(): Accuracy[] {
+        let array: Accuracy[] = JSON.parse((<HTMLInputElement>document.getElementById("accuracy-settings")).value);
+        let accuracySettings: Accuracy[] = [];
+        for(let i = 0; i < array.length; i++) { // this validates whether the user gave the right input
+            let object = array[i];
+            accuracySettings.push(new Accuracy(object.name, object.upperBound, object.lowerBound));
+        }
+        return accuracySettings;
     }
 }

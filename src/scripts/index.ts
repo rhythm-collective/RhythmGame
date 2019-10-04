@@ -1,6 +1,6 @@
-import {config, Note, prepareDisplay} from "./display";
+import {config, prepareDisplay} from "./display";
 import {getFullParse, getPartialParse, PartialParse} from "./parsing";
-import {cleanupGame, startGame} from "./gameplay";
+import {bindingManager, cleanupGame, startGame} from "./gameplay";
 import {
     AudioFileState,
     disableLoadAudioFileButton,
@@ -10,6 +10,7 @@ import {
     updateSimfileState
 } from "./ui_state";
 import {ConfigOption} from "./config";
+import {Note} from "./note_manager";
 
 export class Mode {
     public type: string;
@@ -25,6 +26,7 @@ let audioSource: AudioBufferSourceNode;
 let localStartedParse: PartialParse;
 updateSimfileState(SimfileState.NO_SIMFILE);
 updateAudioFileState(AudioFileState.NO_AUDIO_FILE);
+document.addEventListener("keydown", (e) => (bindingManager.keyDown(e)));
 //document.getElementById("upload").addEventListener("change", simfileUploaded);
 
 export function loadTextFile(
@@ -175,23 +177,8 @@ export function finishParse() {
     let tracks: Note[][] = getFullParse(selectedMode, localStartedParse);
     prepareDisplay(tracks);
     cleanupGame();
-    updateSimfileState(SimfileState.SIMFILE_PARSED, tracks);
-    document.addEventListener("keydown", (e) => (keyBindingManager.keyDown(e)));
+    updateSimfileState(SimfileState.SIMFILE_PARSED, tracks.length);
 }
-
-class KeyBindingUIManager {
-    expectingKeyInput: boolean = false;
-    receivingElement: HTMLInputElement;
-
-    keyDown(e: KeyboardEvent) {
-        if(this.expectingKeyInput) {
-            this.receivingElement.value = e.key.toUpperCase();
-            this.expectingKeyInput = false;
-        }
-    }
-}
-
-let keyBindingManager: KeyBindingUIManager = new KeyBindingUIManager();
 
 export function goToPrepareGameplay() {
     disablePlayButton();
@@ -199,8 +186,8 @@ export function goToPrepareGameplay() {
 }
 
 export function bindingClicked(bindingIndex: number) {
-    keyBindingManager.expectingKeyInput = true;
-    keyBindingManager.receivingElement = <HTMLInputElement>document.getElementById("key-binding-field-" + bindingIndex);
+    bindingManager.expectingKeyInput = true;
+    bindingManager.receivingIndex = bindingIndex;
 }
 
 export function configUpdated(configOptionCode: number) {
@@ -216,6 +203,9 @@ export function configUpdated(configOptionCode: number) {
             break;
         case ConfigOption.AUDIO_START_DELAY:
             config.updateAudioStartDelay();
+            break;
+        case ConfigOption.ACCURACY_SETTINGS:
+            config.updateAccuracySettings();
             break;
     }
 }

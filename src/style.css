@@ -20,3 +20,7 @@
 .key-binding-option {
     white-space: nowrap;
 }
+
+.accuracy-settings-section * {
+    vertical-align: middle;
+}

@@ -38,6 +38,20 @@
                 <option value="UP">Up</option>
                 <option value="DOWN">Down</option>
             </select><br>
+            <span class="accuracy-settings-section">
+                <label for="accuracy-settings">Accuracy Settings</label>
+                <textarea rows="5" cols="66" id="accuracy-settings" onchange="simparser.configUpdated(4)">[
+    {"name": "Miss", "upperBound": -107},
+    {"name": "Average", "lowerBound": -117, "upperBound": -83},
+    {"name": "Good", "lowerBound": -83, "upperBound": -50},
+    {"name": "Perfect", "lowerBound": -50, "upperBound": -17},
+    {"name": "Amazing", "lowerBound": -17, "upperBound": 17},
+    {"name": "Perfect", "lowerBound": 17, "upperBound":  50},
+    {"name": "Good", "lowerBound": 50, "upperBound": 83},
+    {"name": "Average", "lowerBound": 83, "upperBound": 117},
+    {"name": "Boo", "lowerBound": 117}
+]</textarea><br>
+            </span>
             <label for="audio-start-delay" class="gameplay-option-label">Audio Start Delay (ms)</label>
             <input id="audio-start-delay" type="text" value="0" onchange="simparser.configUpdated(3)"><br>
             <span id="key-binding-menu"></span>

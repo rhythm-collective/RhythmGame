@@ -1,6 +1,6 @@
 /* Step One Of Parsing */
 
-import {Note} from "./display";
+import {Note} from "./note_manager";
 
 export class PartialParse {
     metaData: Map<string, string>;
