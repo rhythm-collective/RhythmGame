@@ -1,13 +1,28 @@
 import * as p5 from "p5";
-import {accuracyManager, gameStarted, timeHandler} from "./gameplay";
+import {accuracyManager, gameStarted, TimeManager, gameplayTimeManager} from "./gameplay";
 import {Config, ScrollDirection} from "./config";
 import {Note, NoteManager, NoteType} from "./note_manager";
+
+class ScrollManager {
+    systemTime: number = 0;
+    timeManager: TimeManager = new TimeManager(0);
+
+    canvasScrolled(e: WheelEvent) {
+        let timeChange = e.deltaY * config.secondsPerPixel * 1000;
+        this.systemTime += timeChange;
+    }
+
+    getGameTime() {
+        return this.timeManager.getGameTime(this.systemTime);
+    }
+}
 
 let canvas: HTMLCanvasElement;
 export let displayManager: DisplayManager;
 let noteManager;
 const gameContainer = document.getElementById("graphical-display-section");
 export let config: Config = new Config(0.005, 60, ScrollDirection.UP, 0);
+let scrollManager: ScrollManager = new ScrollManager();
 config.updateAccuracySettings();
 
 const sketch = (p: p5): void => {
@@ -18,7 +33,11 @@ const sketch = (p: p5): void => {
     p.draw = function () {
         if (displayManager != null) {
             if (gameStarted) {
-                displayManager.currentTime = timeHandler.getGameTime(performance.now()); // comment out for debug
+                displayManager.currentTime = gameplayTimeManager.getGameTime(performance.now());
+                //displayManager.currentTime = scrollManager.getGameTime(); // switch to this for debug mode
+            }
+            else {
+                displayManager.currentTime = scrollManager.getGameTime();
             }
             displayManager.draw();
         }
@@ -33,12 +52,7 @@ export function prepareDisplay(tracks: Note[][]) {
     displayManager = new DisplayManager(noteManager);
     accuracyManager.displayManager = displayManager;
     accuracyManager.noteManager = noteManager;
-    canvas.addEventListener("wheel", e => canvasScrolled(e));
-}
-
-function canvasScrolled(e: WheelEvent) {
-    let timeChange = e.deltaY * config.secondsPerPixel;
-    displayManager.currentTime += timeChange;
+    canvas.addEventListener("wheel", e => scrollManager.canvasScrolled(e));
 }
 
 class NoteDisplay {
@@ -151,8 +165,8 @@ export class DisplayManager {
     }
 
     drawNotesAndConnectors() {
-        let leastTime = this.getLeastTime(this.currentTime - config.additionalOffset);
-        let greatestTime = this.getGreatestTime(this.currentTime - config.additionalOffset);
+        let leastTime = this.getLeastTime(this.currentTime);
+        let greatestTime = this.getGreatestTime(this.currentTime);
         this.drawAllConnectors(leastTime, greatestTime);
         this.drawAllNotes(leastTime, greatestTime);
     }
@@ -160,8 +174,7 @@ export class DisplayManager {
     drawAllNotes(leastTime: number, greatestTime: number) {
         let numTracks = this.noteManager.tracks.length;
         for (let i = 0; i < numTracks; i++) {
-            this.drawNotesInTrack(leastTime, greatestTime, i, numTracks,
-                this.currentTime - config.additionalOffset);
+            this.drawNotesInTrack(leastTime, greatestTime, i, numTracks, this.currentTime);
         }
     }
 
@@ -235,7 +248,7 @@ export class DisplayManager {
         let tracks = this.noteManager.tracks;
         for (let i = 0; i < tracks.length; i++) {
             this.drawConnectorsInTrack(leastTime, greatestTime, tracks[i], i,
-                tracks.length, this.currentTime - config.additionalOffset);
+                tracks.length, this.currentTime);
         }
     }
 

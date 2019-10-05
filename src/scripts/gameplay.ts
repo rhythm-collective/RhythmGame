@@ -19,7 +19,7 @@ export class Accuracy {
 class AccuracyManager {
     displayManager: DisplayManager;
     noteManager: NoteManager;
-    timeHandler: TimeHandler;
+    timeManager: TimeManager;
 
     handlePlayerAction(action: PlayerKeyAction): void {
         if(action.keyState == KeyState.DOWN) {
@@ -74,20 +74,6 @@ class AccuracyManager {
         }
         return null;
     }
-
-    /*
-    getReceptorTimePosition(receptorNumber: number) {
-        if(config.scrollDirection == ScrollDirection.UP) {
-            return this.timeHandler.getGameTime(performance.now()) +
-                (config.receptorYPosition * config.secondsPerPixel * 1000);
-        }
-        else {
-            return this.timeHandler.getGameTime(performance.now()) +
-                    ((this.displayManager.getCanvasHeight() - config.receptorYPosition) *
-                        config.secondsPerPixel * 1000);
-        }
-    }
-     */
 
     getAccuracyName(timeDifference: number): string {
         if(timeDifference < -117) {
@@ -159,7 +145,7 @@ class KeyBindingManager {
 }
 
 export let accuracyManager: AccuracyManager = new AccuracyManager();
-export let timeHandler: TimeHandler;
+export let gameplayTimeManager: TimeManager;
 export let gameStarted: boolean = false;
 export let bindingManager: KeyBindingManager = new KeyBindingManager();
 
@@ -170,9 +156,9 @@ export function startGame() {
     }
     document.addEventListener("keydown", KeyHandler.keyDown);
     document.addEventListener("keyup", KeyHandler.keyUp);
-    timeHandler = new TimeHandler(performance.now());
-    accuracyManager.timeHandler = timeHandler;
-    KeyHandler.timeHandler = timeHandler;
+    gameplayTimeManager = new TimeManager(performance.now());
+    accuracyManager.timeManager = gameplayTimeManager;
+    KeyHandler.timeManager = gameplayTimeManager;
     KeyHandler.accuracyManager = accuracyManager;
     KeyHandler.bindingManager = bindingManager;
     playAudio();
@@ -223,21 +209,25 @@ class PlayerKeyAction {
     }
 }
 
-class TimeHandler {
+export class TimeManager {
     systemTimeWhenGameStarted: number;
 
     constructor(systemTimeWhenGameStarted: number) {
         this.systemTimeWhenGameStarted = systemTimeWhenGameStarted;
     }
 
-    getGameTime(systemTime: number): number {
+    private getElapsedTime(systemTime: number): number {
         return (systemTime - this.systemTimeWhenGameStarted) / 1000; // in seconds
+    }
+
+    getGameTime(systemTime: number) {
+        return this.getElapsedTime(systemTime) + config.additionalOffset; // in seconds
     }
 }
 
 // KeyHandler can't be a class because I want to be able to use document.removeEventListener
 let KeyHandler: any = {
-    timeHandler: undefined,
+    timeManager: undefined,
     accuracyManager: undefined,
     bindingManager: undefined,
     heldKeys: new Set<string>(),
@@ -260,8 +250,8 @@ let KeyHandler: any = {
         }
         KeyHandler.accuracyManager.handlePlayerAction(
             new PlayerKeyAction(
-                //displayManager.currentTime, // uncomment for debug
-                KeyHandler.timeHandler.getGameTime(performance.now()),
+                //displayManager.currentTime, // uncomment for debug mode
+                KeyHandler.timeManager.getGameTime(performance.now()),
                 KeyHandler.bindingManager.getTrackIndex(e.key),
                 keyState
             )
