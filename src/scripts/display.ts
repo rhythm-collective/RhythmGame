@@ -1,5 +1,5 @@
 import * as p5 from "p5";
-import {accuracyManager, gameStarted, TimeManager, gameplayTimeManager} from "./gameplay";
+import {accuracyManager, gameStarted, TimeManager, gameplayTimeManager, missManager} from "./gameplay";
 import {Config, ScrollDirection} from "./config";
 import {Note, NoteManager, NoteType} from "./note_manager";
 
@@ -19,7 +19,7 @@ class ScrollManager {
 
 let canvas: HTMLCanvasElement;
 export let displayManager: DisplayManager;
-let noteManager;
+export let noteManager: NoteManager;
 const gameContainer = document.getElementById("graphical-display-section");
 export let config: Config = new Config(0.005, 60, ScrollDirection.UP, 0);
 let scrollManager: ScrollManager = new ScrollManager();
@@ -33,13 +33,15 @@ const sketch = (p: p5): void => {
     p.draw = function () {
         if (displayManager != null) {
             if (gameStarted) {
-                displayManager.currentTime = gameplayTimeManager.getGameTime(performance.now());
-                //displayManager.currentTime = scrollManager.getGameTime(); // switch to this for debug mode
+                //let currentTime = scrollManager.getGameTime(); // Use this for debug mode
+                let currentTime = gameplayTimeManager.getGameTime(performance.now());
+                displayManager.currentTime = currentTime;
+                missManager.update(currentTime);
             }
             else {
                 displayManager.currentTime = scrollManager.getGameTime();
             }
-            displayManager.draw();
+            displayManager.draw(); //TODO: make draw require game time as an argument
         }
     };
 };

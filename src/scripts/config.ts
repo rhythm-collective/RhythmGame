@@ -94,7 +94,7 @@ export class Config {
         let accuracySettings: Accuracy[] = [];
         for(let i = 0; i < array.length; i++) { // this validates whether the user gave the right input
             let object = array[i];
-            accuracySettings.push(new Accuracy(object.name, object.upperBound, object.lowerBound));
+            accuracySettings.push(new Accuracy(object.name, object.lowerBound, object.upperBound));
         }
         return accuracySettings;
     }

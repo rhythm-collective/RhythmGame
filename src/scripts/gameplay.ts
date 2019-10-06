@@ -1,4 +1,4 @@
-import {config, displayManager, DisplayManager} from "./display";
+import {config, displayManager, DisplayManager, noteManager} from "./display";
 import {ScrollDirection} from "./config";
 import {playAudio} from "./index";
 import {Note, NoteManager} from "./note_manager";
@@ -13,6 +13,76 @@ export class Accuracy {
         this.name = name;
         this.lowerBound = lowerBound;
         this.upperBound = upperBound;
+    }
+}
+
+export class MissManager {
+    nextUnmissedNoteIndices: number[];
+
+    constructor(numTracks: number) {
+        this.nextUnmissedNoteIndices = [];
+        for(let i = 0; i < numTracks; i++) {
+            this.nextUnmissedNoteIndices.push(0);
+        }
+    }
+
+    update(currentTime: number) {
+        if (config.accuracySettings[0].lowerBound != null) {
+            return; // A lowerBound for misses is incompatible with this way of doing misses
+        }
+        let numTracks = noteManager.tracks.length;
+        let newNextUnmissedNoteIndices: number[] = this.getNewNextUnmissedNoteIndices(
+            this.getMissBoundary(currentTime), numTracks);
+        let allMissedNotes: Note[][] = this.findMissedNotes(numTracks, newNextUnmissedNoteIndices);
+        this.handleMissedNotes(allMissedNotes);
+        this.updateNextUnmissedNoteIndices(numTracks, newNextUnmissedNoteIndices);
+    }
+
+    findMissedNotes(numTracks: number, newNextUnmissedNoteIndices: number[]) {
+        let allMissedNotes: Note[][] = [];
+        for(let i = 0; i < numTracks; i++) {
+            let nextUnmissedNoteIndex = this.nextUnmissedNoteIndices[i];
+            let newNextUnmissedNoteIndex = newNextUnmissedNoteIndices[i];
+            if(newNextUnmissedNoteIndex > nextUnmissedNoteIndex) {
+                let potentialMissedNotes: Note[] = noteManager.tracks[i].slice(nextUnmissedNoteIndex, newNextUnmissedNoteIndex);
+                allMissedNotes.push(potentialMissedNotes.filter((note) => !note.isHit));
+            }
+            else {
+                allMissedNotes.push([]);
+            }
+        }
+        return allMissedNotes;
+    }
+
+    getMissBoundary(currentTime: number) {
+        let missBoundary = currentTime + (config.accuracySettings[0].upperBound / 1000); //result is in seconds
+        return missBoundary;
+    }
+
+    getNewNextUnmissedNoteIndices(missBoundary: number, numTracks: number) {
+        let earliestHittableNoteIndices: number[] = [];
+        for(let i = 0; i < numTracks; i++) {
+            let track: Note[] = noteManager.tracks[i];
+            let index: number = noteManager.findIndexOfFirstNoteAfterTime(missBoundary, track,
+                this.nextUnmissedNoteIndices[i]);
+            earliestHittableNoteIndices.push(index);
+        }
+        return earliestHittableNoteIndices;
+    }
+
+    handleMissedNotes(missedNotes: Note[][]) {
+        for(let i = 0; i < missedNotes.length; i++) {
+            for(let j = 0; j < missedNotes[i].length; j++) {
+                console.log(config.accuracySettings[0].name);
+                missedNotes[i][j].isHit = true;
+            }
+        }
+    }
+
+    updateNextUnmissedNoteIndices(numTracks: number, newNextUnmissedNoteIndices: number[]) {
+        for(let i = 0; i < numTracks; i++) {
+            this.nextUnmissedNoteIndices[i] = Math.max(this.nextUnmissedNoteIndices[i], newNextUnmissedNoteIndices[i]);
+        }
     }
 }
 
@@ -37,9 +107,11 @@ class AccuracyManager {
         let note: Note = this.getEarliestUnhitNote(notesInHittableRange);
         if(note != null) {
             note.isHit = true;
-            //TODO: accuracy doesn't seem to take the delay into account
             let accuracy = (note.time - receptorTimePosition) * 1000; // note time is in seconds
             console.log(this.getAccuracyName(accuracy) + " (" + Math.round(accuracy) + " ms)");
+        }
+        else if (this.isConfiguredForBoos()) {
+            console.log(this.getAccuracyName(Infinity));
         }
     }
 
@@ -50,7 +122,6 @@ class AccuracyManager {
             accuracySettings[1].lowerBound : accuracySettings[0].lowerBound;
         let greatestTime;
         if(accuracySettings[numSettings - 1].upperBound == null) {
-            //TODO: no early upper bound => Boos
             greatestTime = accuracySettings[numSettings - 2].upperBound;
         }
         else {
@@ -75,26 +146,29 @@ class AccuracyManager {
         return null;
     }
 
+    //Expects timeDifference in milliseconds
     getAccuracyName(timeDifference: number): string {
-        if(timeDifference < -117) {
-            return "MISS";
+        if(config.accuracySettings[0].lowerBound == null &&
+            timeDifference < config.accuracySettings[0].upperBound) {
+            return config.accuracySettings[0].name; // Handle miss if it exists
         }
-        else if(timeDifference > 117) {
-            return "BOO";
+        if(config.accuracySettings[config.accuracySettings.length - 1].upperBound == null &&
+            timeDifference >= config.accuracySettings[config.accuracySettings.length - 1].lowerBound) {
+            return config.accuracySettings[config.accuracySettings.length - 1].name; // Handle boo if it exists
         }
-        let absoluteTimeDifference: number = Math.abs(timeDifference);
-        if(absoluteTimeDifference <= 117 && absoluteTimeDifference > 83) {
-            return "AVERAGE";
+        for(let i = 0; i < config.accuracySettings.length; i++) {
+            let accuracy: Accuracy = config.accuracySettings[i];
+            if(accuracy.lowerBound != null && accuracy.upperBound != null) {
+                if(accuracy.lowerBound < timeDifference && timeDifference <= accuracy.upperBound) {
+                    return accuracy.name;
+                }
+            }
         }
-        else if(absoluteTimeDifference <= 83 && absoluteTimeDifference > 50) {
-            return "GOOD";
-        }
-        else if(absoluteTimeDifference <= 50 && absoluteTimeDifference > 17) {
-            return "PERFECT";
-        }
-        else if(absoluteTimeDifference <= 17) {
-            return "AMAZING";
-        }
+        return "ERROR: Unknown accuracy";
+    }
+
+    isConfiguredForBoos(): boolean {
+        return config.accuracySettings[config.accuracySettings.length - 1].upperBound == null;
     }
 }
 
@@ -148,6 +222,7 @@ export let accuracyManager: AccuracyManager = new AccuracyManager();
 export let gameplayTimeManager: TimeManager;
 export let gameStarted: boolean = false;
 export let bindingManager: KeyBindingManager = new KeyBindingManager();
+export let missManager: MissManager;
 
 export function startGame() {
     delayNotes();
@@ -158,6 +233,7 @@ export function startGame() {
     document.addEventListener("keyup", KeyHandler.keyUp);
     gameplayTimeManager = new TimeManager(performance.now());
     accuracyManager.timeManager = gameplayTimeManager;
+    missManager = new MissManager(noteManager.tracks.length);
     KeyHandler.timeManager = gameplayTimeManager;
     KeyHandler.accuracyManager = accuracyManager;
     KeyHandler.bindingManager = bindingManager;
