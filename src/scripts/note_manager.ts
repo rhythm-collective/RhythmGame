@@ -49,4 +49,19 @@ export class NoteManager {
         }
         return -1;
     }
+
+    getEarliestNote(): Note {
+        let earliestNote: Note;
+        for(let i = 0; i < this.tracks.length; i++) {
+            if(this.tracks[i].length > 0) {
+                let trackEarliestNote: Note = this.tracks[i][0];
+                if(earliestNote == undefined) {
+                    earliestNote = trackEarliestNote;
+                } else if(earliestNote.time > trackEarliestNote.time) {
+                    earliestNote = trackEarliestNote;
+                }
+            }
+        }
+        return earliestNote;
+    }
 }

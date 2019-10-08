@@ -225,7 +225,7 @@ export let bindingManager: KeyBindingManager = new KeyBindingManager();
 export let missManager: MissManager;
 
 export function startGame() {
-    delayNotes();
+    //delayNotes();
     if(gameStarted) {
         cleanupGame();
     }
@@ -237,7 +237,7 @@ export function startGame() {
     KeyHandler.timeManager = gameplayTimeManager;
     KeyHandler.accuracyManager = accuracyManager;
     KeyHandler.bindingManager = bindingManager;
-    playAudio();
+    window.setTimeout(playAudio, config.pauseAtStart * 1000);
     gameStarted = true;
 }
 
@@ -297,7 +297,7 @@ export class TimeManager {
     }
 
     getGameTime(systemTime: number) {
-        return this.getElapsedTime(systemTime) + config.additionalOffset; // in seconds
+        return this.getElapsedTime(systemTime) + config.additionalOffset - config.pauseAtStart; // in seconds
     }
 }
 

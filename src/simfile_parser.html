@@ -52,8 +52,11 @@
     {"name": "Boo", "lowerBound": 117}
 ]</textarea><br>
             </span>
-            <label for="audio-start-delay" class="gameplay-option-label">Audio Start Delay (ms)</label>
+            <label for="audio-start-delay" class="gameplay-option-label">Note Time Offset (ms)</label>
             <input id="audio-start-delay" type="text" value="0" onchange="simparser.configUpdated(3)"><br>
+            <label for="pause-at-start" class="gameplay-option-label">Pause At Start (ms)</label>
+            <input id="pause-at-start" type="text" value="0" onchange="simparser.configUpdated(5)">
+            <button onclick="simparser.autoPauseAtStart()">Auto</button><br>
             <span id="key-binding-menu"></span>
         </span>
         <input id="play-button" type="button" value="Play" style="display: none;" onclick="simparser.goToPrepareGameplay()">

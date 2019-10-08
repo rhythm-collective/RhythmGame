@@ -21,7 +21,7 @@ let canvas: HTMLCanvasElement;
 export let displayManager: DisplayManager;
 export let noteManager: NoteManager;
 const gameContainer = document.getElementById("graphical-display-section");
-export let config: Config = new Config(0.005, 60, ScrollDirection.UP, 0);
+export let config: Config = new Config(0.005, 60, ScrollDirection.UP, 0, 0);
 let scrollManager: ScrollManager = new ScrollManager();
 config.updateAccuracySettings();
 

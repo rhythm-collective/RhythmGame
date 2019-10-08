@@ -12,6 +12,18 @@ import {
 import {ConfigOption} from "./config";
 import {Note} from "./note_manager";
 
+/*
+1) Get time position of the first note. If that note would be on screen at the start of the song, automatically
+decrease the starting currentTime. Also take into account the earliest accuracy. Also display this calculated start
+time and let the user configure it. Also use this additional delay to delay the start of the audio file.
+2) Get time position of the last note. Use the time position of the last note, the latest accuracy, the end of the
+audio file, and an arbitrary buffer value to determine when to officially end the song, eg:
+Max( time position of last note + Max( 1 sec, - latest accuracy ), end of audio file )
+3) Record accuracy and summarize at end of song
+4) Be able to hit holds
+5) Be able to hit mines
+ */
+
 export class Mode {
     public type: string;
     public difficulty: string;
@@ -207,5 +219,12 @@ export function configUpdated(configOptionCode: number) {
         case ConfigOption.ACCURACY_SETTINGS:
             config.updateAccuracySettings();
             break;
+        case ConfigOption.PAUSE_AT_START:
+            config.updatePauseAtStart();
+            break;
     }
+}
+
+export function autoPauseAtStart() {
+    config.setPauseAtStartToDefault();
 }

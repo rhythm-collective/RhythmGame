@@ -1,5 +1,5 @@
-import {displayManager} from "./display";
-import {Accuracy} from "./gameplay";
+import {displayManager, noteManager} from "./display";
+import {Accuracy, TimeManager} from "./gameplay";
 
 export enum ScrollDirection {
     UP,
@@ -12,21 +12,24 @@ export enum ConfigOption {
     SCROLL_DIRECTION,
     AUDIO_START_DELAY,
     ACCURACY_SETTINGS,
+    PAUSE_AT_START,
 }
 
 export class Config {
     secondsPerPixel: number;
     receptorYPosition: number;
     scrollDirection: ScrollDirection;
-    additionalOffset: number;
+    additionalOffset: number; // in seconds
     accuracySettings: Accuracy[];
+    pauseAtStart: number; // in seconds
 
     constructor(secondsPerPixel: number, receptorYPosition: number, scrollDirection: ScrollDirection,
-                additionalOffset: number) {
+                additionalOffset: number, pauseAtStart: number) {
         this.secondsPerPixel = secondsPerPixel;
         this.receptorYPosition = receptorYPosition;
         this.scrollDirection = scrollDirection;
         this.additionalOffset = additionalOffset;
+        this.pauseAtStart = pauseAtStart;
     }
 
     updateSecondsPerPixel() {
@@ -53,13 +56,23 @@ export class Config {
 
     updateAudioStartDelay() {
         let additionalOffset: number = this.getAdditionalOffset();
-        if(additionalOffset != null && additionalOffset != NaN) {
-            this.additionalOffset = additionalOffset
+        if(additionalOffset != null && additionalOffset != NaN && additionalOffset >= 0) {
+            this.additionalOffset = additionalOffset;
         }
     }
 
     updateAccuracySettings() {
-        this.accuracySettings = this.getAccuracySettings();
+        let accuracySettings: Accuracy[] = this.getAccuracySettings();
+        if(accuracySettings != null) {
+            this.accuracySettings = accuracySettings;
+        }
+    }
+
+    updatePauseAtStart() {
+        let pauseAtStart: number = this.getPauseAtStart();
+        if(pauseAtStart != null && pauseAtStart != NaN) {
+            this.pauseAtStart = pauseAtStart;
+        }
     }
 
     private getSecondsPerPixel(): number {
@@ -97,5 +110,41 @@ export class Config {
             accuracySettings.push(new Accuracy(object.name, object.lowerBound, object.upperBound));
         }
         return accuracySettings;
+    }
+
+    private getPauseAtStart(): number {
+        return parseFloat((<HTMLInputElement>document.getElementById("pause-at-start")).value) / 1000;
+    }
+
+    public setPauseAtStartToDefault(): void {
+        let timeFromReceptorToScreenEdge: number = this.getTimeFromReceptorToScreenEdge();
+        let minimumPauseAtStart: number = Math.max(timeFromReceptorToScreenEdge,
+            this.getEarliestAccuracy() / 1000);
+        let currentNaturalPauseAtStart: number = noteManager.getEarliestNote().time - this.getInitalGameTime();
+        let defaultPauseAtStart = Math.max(0, minimumPauseAtStart - currentNaturalPauseAtStart) * 1000;
+        (<HTMLInputElement>document.getElementById("pause-at-start")).value =
+            Math.round(defaultPauseAtStart).toString();
+        this.updatePauseAtStart();
+    }
+
+    private getTimeFromReceptorToScreenEdge(): number {
+        if(this.scrollDirection == ScrollDirection.UP) {
+            return (displayManager.getCanvasHeight() - this.receptorYPosition) * this.secondsPerPixel;
+        }
+        else {
+            return this.receptorYPosition * this.secondsPerPixel;
+        }
+    }
+
+    private getEarliestAccuracy(): number {
+        if (this.accuracySettings[this.accuracySettings.length - 1].upperBound != null) {
+            return this.accuracySettings[this.accuracySettings.length - 1].upperBound;
+        } else {
+            return this.accuracySettings[this.accuracySettings.length - 2].upperBound;
+        }
+    }
+
+    private getInitalGameTime(): number {
+        return new TimeManager(0).getGameTime(0) + this.getPauseAtStart();
     }
 }
