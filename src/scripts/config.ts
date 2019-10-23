@@ -1,4 +1,4 @@
-import {displayManager, noteManager} from "./display";
+import {displayManager, noteManager} from "./playing_display";
 import {Accuracy, TimeManager} from "./gameplay";
 
 export enum ScrollDirection {
@@ -56,7 +56,7 @@ export class Config {
 
     updateAudioStartDelay() {
         let additionalOffset: number = this.getAdditionalOffset();
-        if(additionalOffset != null && additionalOffset != NaN && additionalOffset >= 0) {
+        if(additionalOffset != null && additionalOffset != NaN) {
             this.additionalOffset = additionalOffset;
         }
     }
@@ -136,7 +136,7 @@ export class Config {
         }
     }
 
-    private getEarliestAccuracy(): number {
+    getEarliestAccuracy(): number {
         if (this.accuracySettings[this.accuracySettings.length - 1].upperBound != null) {
             return this.accuracySettings[this.accuracySettings.length - 1].upperBound;
         } else {

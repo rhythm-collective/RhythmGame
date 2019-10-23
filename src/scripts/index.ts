@@ -1,4 +1,4 @@
-import {config, prepareDisplay} from "./display";
+import {config, prepareDisplay} from "./playing_display";
 import {getFullParse, getPartialParse, PartialParse} from "./parsing";
 import {bindingManager, cleanupGame, startGame} from "./gameplay";
 import {
@@ -11,11 +11,9 @@ import {
 } from "./ui_state";
 import {ConfigOption} from "./config";
 import {Note} from "./note_manager";
+import {GameState, GameStateManager} from "./game_state";
 
 /*
-1) Get time position of the first note. If that note would be on screen at the start of the song, automatically
-decrease the starting currentTime. Also take into account the earliest accuracy. Also display this calculated start
-time and let the user configure it. Also use this additional delay to delay the start of the audio file.
 2) Get time position of the last note. Use the time position of the last note, the latest accuracy, the end of the
 audio file, and an arbitrary buffer value to determine when to officially end the song, eg:
 Max( time position of last note + Max( 1 sec, - latest accuracy ), end of audio file )
@@ -36,6 +34,8 @@ let audioFileReader: FileReader;
 let audioContext: AudioContext;
 let audioSource: AudioBufferSourceNode;
 let localStartedParse: PartialParse;
+export let gameStateManager: GameStateManager = new GameStateManager();
+//gameStateManager.currentState = GameState.RESULTS; // Test only
 updateSimfileState(SimfileState.NO_SIMFILE);
 updateAudioFileState(AudioFileState.NO_AUDIO_FILE);
 document.addEventListener("keydown", (e) => (bindingManager.keyDown(e)));
@@ -83,6 +83,7 @@ function onAudioLoaded() {
 }
 
 function audioBuffered(buffer: AudioBuffer) {
+    gameStateManager.setAudioDuration(buffer.duration);
     audioSource.buffer = buffer;
     audioSource.connect(audioContext.destination);
     updateAudioFileState(AudioFileState.AUDIO_FILE_LOADED);

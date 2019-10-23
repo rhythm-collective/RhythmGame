@@ -64,4 +64,23 @@ export class NoteManager {
         }
         return earliestNote;
     }
+
+    getLatestNote(): Note {
+        let latestNote: Note;
+        for(let i = 0; i < this.tracks.length; i++) {
+            if(this.tracks[i].length > 0) {
+                let trackLatestNote: Note = this.tracks[i][this.tracks[i].length - 1];
+                if(latestNote == undefined) {
+                    latestNote = trackLatestNote;
+                } else if(latestNote.time < trackLatestNote.time) {
+                    latestNote = trackLatestNote;
+                }
+            }
+        }
+        return latestNote;
+    }
+
+    getTotalNotes() {
+        return this.tracks.reduce((sum, track) => sum + track.length, 0);
+    }
 }

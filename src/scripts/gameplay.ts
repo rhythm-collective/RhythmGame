@@ -1,8 +1,8 @@
-import {config, displayManager, DisplayManager, noteManager} from "./display";
-import {ScrollDirection} from "./config";
-import {playAudio} from "./index";
+import {config, displayManager, DisplayManager, noteManager} from "./playing_display";
+import {gameStateManager, playAudio} from "./index";
 import {Note, NoteManager} from "./note_manager";
 import {keyBindingMenu} from "./ui_state";
+import {GameState} from "./game_state";
 
 export class Accuracy {
     name: string;
@@ -34,7 +34,7 @@ export class MissManager {
         let newNextUnmissedNoteIndices: number[] = this.getNewNextUnmissedNoteIndices(
             this.getMissBoundary(currentTime), numTracks);
         let allMissedNotes: Note[][] = this.findMissedNotes(numTracks, newNextUnmissedNoteIndices);
-        this.handleMissedNotes(allMissedNotes);
+        this.handleMissedNotes(allMissedNotes, currentTime);
         this.updateNextUnmissedNoteIndices(numTracks, newNextUnmissedNoteIndices);
     }
 
@@ -70,10 +70,11 @@ export class MissManager {
         return earliestHittableNoteIndices;
     }
 
-    handleMissedNotes(missedNotes: Note[][]) {
+    handleMissedNotes(missedNotes: Note[][], currentTime: number) {
         for(let i = 0; i < missedNotes.length; i++) {
             for(let j = 0; j < missedNotes[i].length; j++) {
                 console.log(config.accuracySettings[0].name);
+                gameStateManager.saveAccuracy(i, -Infinity, currentTime);
                 missedNotes[i][j].isHit = true;
             }
         }
@@ -108,9 +109,11 @@ class AccuracyManager {
         if(note != null) {
             note.isHit = true;
             let accuracy = (note.time - receptorTimePosition) * 1000; // note time is in seconds
+            gameStateManager.saveAccuracy(trackNumber, accuracy, currentTime);
             console.log(this.getAccuracyName(accuracy) + " (" + Math.round(accuracy) + " ms)");
         }
         else if (this.isConfiguredForBoos()) {
+            gameStateManager.saveAccuracy(trackNumber, Infinity, currentTime);
             console.log(this.getAccuracyName(Infinity));
         }
     }
@@ -220,13 +223,11 @@ class KeyBindingManager {
 
 export let accuracyManager: AccuracyManager = new AccuracyManager();
 export let gameplayTimeManager: TimeManager;
-export let gameStarted: boolean = false;
 export let bindingManager: KeyBindingManager = new KeyBindingManager();
 export let missManager: MissManager;
 
 export function startGame() {
-    //delayNotes();
-    if(gameStarted) {
+    if(gameStateManager.currentState == GameState.PLAYING) {
         cleanupGame();
     }
     document.addEventListener("keydown", KeyHandler.keyDown);
@@ -238,25 +239,16 @@ export function startGame() {
     KeyHandler.accuracyManager = accuracyManager;
     KeyHandler.bindingManager = bindingManager;
     window.setTimeout(playAudio, config.pauseAtStart * 1000);
-    gameStarted = true;
-}
-
-function delayNotes() {
-    let delay: number = parseFloat((<HTMLInputElement>document.getElementById("audio-start-delay")).value);
-    let tracks = displayManager.noteManager.tracks;
-    for(let i = 0; i < tracks.length; i++) {
-        for(let j = 0; j < tracks[i].length; j++) {
-            tracks[i][j].time -= delay / 1000;
-        }
-    }
+    gameStateManager.currentState = GameState.PLAYING;
+    gameStateManager.initializeAccuracyRecording(noteManager.tracks.length);
 }
 
 export function cleanupGame() {
-    if(gameStarted) {
+    if(gameStateManager.currentState == GameState.PLAYING) {
         document.removeEventListener("keydown", KeyHandler.keyDown);
         document.removeEventListener("keyup", KeyHandler.keyUp);
         resetAllHitNotes();
-        gameStarted = false;
+        gameStateManager.currentState = GameState.NOT_STARTED;
     }
 }
 
