@@ -1,29 +1,42 @@
 import * as p5 from "p5";
 import {drawAccuracyBars} from "./drawing_util";
-import {Accuracy} from "./gameplay";
-import {config} from "./playing_display";
+import {Accuracy, AccuracyManager} from "./accuracy_manager";
+import {Config} from "./config";
+import {NoteManager} from "./note_manager";
 
-export class ResultsManager {
-    accuracyRecording: { time: number, accuracy: number }[][];
+//TODO: take holds and releases into account
+export class ResultsDisplay {
+    private config: Config;
+    private noteManager: NoteManager;
+    private accuracyManager: AccuracyManager;
+    private accuracyRecording: { time: number, accuracy: number }[][];
+    private p: p5;
 
-    initialize(accuracyRecording: { time: number, accuracy: number }[][]) {
+    constructor(config: Config, noteManager: NoteManager, accuracyManager: AccuracyManager, p: p5,
+                accuracyRecording: { time: number, accuracy: number }[][]) {
+        this.config = config;
+        this.noteManager = noteManager;
+        this.accuracyManager = accuracyManager;
+        this.p = p;
         this.accuracyRecording = accuracyRecording;
     }
 
-    draw(p: p5) {
-        p.clear();
-        this.drawAccuracyResults(p, config.accuracySettings, this.accuracyRecording);
+    draw() {
+        this.p.clear();
+        this.drawAccuracyResults(this.p, this.config.accuracySettings, this.accuracyRecording, this.noteManager, this.accuracyManager);
     }
 
     private drawAccuracyResults(p: p5, accuracySettings: Accuracy[],
-                                accuracyRecording: { time: number; accuracy: number }[][]) {
+                                accuracyRecording: { time: number; accuracy: number }[][],
+                                noteManager: NoteManager, accuracyManager: AccuracyManager) {
         let centerX = p.width / 2;
         let centerY = p.height / 2;
         let barWidth = p.width * 0.6;
         let barHeight = barWidth / 10;
         let leftLabelHeight = 0.8 * barHeight;
         let accuracyListForResults = this.getResultsAccuracyList(accuracySettings);
-        drawAccuracyBars(p, accuracyListForResults, accuracyRecording, centerX, centerY, leftLabelHeight, barWidth, barHeight);
+        drawAccuracyBars(p, accuracyListForResults, accuracyRecording, centerX, centerY, leftLabelHeight, barWidth,
+            barHeight, noteManager, accuracyManager);
     }
 
     // return a list of unique accuracies sorted by the offset, with the best accuracy being first
@@ -69,5 +82,3 @@ export class ResultsManager {
         return a.sortValue - b.sortValue;
     }
 }
-
-export let resultsManager: ResultsManager = new ResultsManager(); //TODO: move to Globals class

@@ -1,26 +1,17 @@
-import {config, prepareDisplay} from "./playing_display";
 import {getFullParse, getPartialParse, PartialParse} from "./parsing";
-import {bindingManager, cleanupGame, startGame} from "./gameplay";
 import {
     AudioFileState,
-    disableLoadAudioFileButton,
     disablePlayButton,
-    SimfileState,
-    updateAudioFileState,
+    SimfileState, updateAudioFileState,
     updateSimfileState
 } from "./ui_state";
-import {ConfigOption} from "./config";
-import {Note} from "./note_manager";
-import {GameState, GameStateManager} from "./game_state";
-
-/*
-2) Get time position of the last note. Use the time position of the last note, the latest accuracy, the end of the
-audio file, and an arbitrary buffer value to determine when to officially end the song, eg:
-Max( time position of last note + Max( 1 sec, - latest accuracy ), end of audio file )
-3) Record accuracy and summarize at end of song
-4) Be able to hit holds
-5) Be able to hit mines
- */
+import {Config, ConfigOption} from "./config";
+import {loadSoundFile, loadTextFile} from "./file_util";
+import {Globals} from "./globals";
+import {PreviewDisplay} from "./preview_display";
+import {KeyBindingManager} from "./key_binding_manager";
+import {PlayingDisplay} from "./playing_display";
+import {replaceNotYetImplementedNoteTypes, setAllNotesToDefault} from "./util";
 
 export class Mode {
     public type: string;
@@ -29,99 +20,48 @@ export class Mode {
     public id: number;
 }
 
-let simfileReader: FileReader;
-let audioFileReader: FileReader;
-let audioContext: AudioContext;
-let audioSource: AudioBufferSourceNode;
 let localStartedParse: PartialParse;
-export let gameStateManager: GameStateManager = new GameStateManager();
-//gameStateManager.currentState = GameState.RESULTS; // Test only
-updateSimfileState(SimfileState.NO_SIMFILE);
-updateAudioFileState(AudioFileState.NO_AUDIO_FILE);
-document.addEventListener("keydown", (e) => (bindingManager.keyDown(e)));
-//document.getElementById("upload").addEventListener("change", simfileUploaded);
+export let config = new Config({});
+let keyBindingManager = new KeyBindingManager(config);
+document.addEventListener("keydown", (e) => (keyBindingManager.keyDown(e)));
 
-export function loadTextFile(
-    file: File,
-    listener: (this: FileReader, ev: ProgressEvent<FileReader>) => any,
-    options?: boolean | AddEventListenerOptions
-) {
-    simfileReader = new FileReader();
-    simfileReader.readAsText(file);
-    simfileReader.addEventListener("loadend", listener, options);
-}
-
-export function loadSoundFile(
-    file: File,
-    listener: (this: FileReader, ev: ProgressEvent<FileReader>) => any,
-    options?: boolean | AddEventListenerOptions
-) {
-    audioFileReader = new FileReader();
-    audioFileReader.readAsArrayBuffer(file);
-    audioFileReader.addEventListener("loadend", listener, options);
-}
-
-export function audioFileUploaded() {
-    updateAudioFileState(AudioFileState.AUDIO_FILE_UPLOADED);
-}
-
-export function bufferAudioFile() {
-    disableLoadAudioFileButton();
-    let audioUpload: HTMLInputElement = <HTMLInputElement>(
-        document.getElementById("audio-upload")
-    )
-    let file: File = audioUpload.files[0];
-    loadSoundFile(file, onAudioLoaded);
-}
-
-function onAudioLoaded() {
-    // @ts-ignore
-    audioContext = new (window.AudioContext || window.webkitAudioContext)()
-    audioSource = audioContext.createBufferSource();
-    audioContext.decodeAudioData(<ArrayBuffer>audioFileReader.result).then(audioBuffered,
-        function(e){ console.log("Error with decoding audio data" + e.err); });
-}
-
-function audioBuffered(buffer: AudioBuffer) {
-    gameStateManager.setAudioDuration(buffer.duration);
-    audioSource.buffer = buffer;
-    audioSource.connect(audioContext.destination);
-    updateAudioFileState(AudioFileState.AUDIO_FILE_LOADED);
-}
-
-export function playAudio() {
-    audioSource.start(0);
-}
-
-export function stopAudio() {
-    audioSource.stop(0);
-}
-
-// noinspection JSUnusedGlobalSymbols,JSUnusedLocalSymbols
+// This function is called from HTML
 export function simfileUploaded() {
     localStartedParse = undefined;
-    cleanupGame();
     updateSimfileState(SimfileState.SIMFILE_UPLOADED);
-}
-
-// noinspection JSUnusedLocalSymbols
-export function preparseSimfile() {
-    let simfileUpload: HTMLInputElement = <HTMLInputElement>(
-        document.getElementById("upload")
-    );
+    let simfileUpload: HTMLInputElement = <HTMLInputElement>(document.getElementById("upload"));
     let file: File = simfileUpload.files[0];
-    loadTextFile(file, onFileLoaded);
+    loadTextFile(file, (event: ProgressEvent<FileReader>) => {
+        startParse(<string>event.target.result);
+    });
 }
 
-function onFileLoaded() {
-    let fileContents: string = <string>simfileReader.result;
-    startParse(fileContents);
+export let audioSource: AudioBufferSourceNode;
+
+// This function is called from HTML
+export function audioFileUploaded() {
+    updateAudioFileState(AudioFileState.AUDIO_FILE_UPLOADED);
+    let audioUpload: HTMLInputElement = <HTMLInputElement>(document.getElementById("audio-upload"));
+    let file: File = audioUpload.files[0];
+    loadSoundFile(file, (event: ProgressEvent<FileReader>) => {
+        // @ts-ignore
+        let audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        audioSource = audioContext.createBufferSource();
+        audioContext.decodeAudioData(<ArrayBuffer>event.target.result).then((buffer: AudioBuffer) => {
+                // gameStateManager.setAudioDuration(buffer.duration);
+                audioSource.buffer = buffer;
+                audioSource.connect(audioContext.destination);
+                updateAudioFileState(AudioFileState.AUDIO_FILE_LOADED);
+            },
+            (e: any) => {
+                console.log("Error with decoding audio data" + e.err);
+            }); // Can e have a more specific type?
+    });
 }
 
 function startParse(fileContents: string) {
     localStartedParse = getPartialParse(fileContents);
     let modeOptions: Mode[] = getModeOptionsForDisplay(localStartedParse.modes);
-    cleanupGame();
     updateSimfileState(SimfileState.SIMFILE_PREPARSED, modeOptions);
 }
 
@@ -179,32 +119,30 @@ function difficultyRank(difficulty: string) {
     }
 }
 
+// This function is called from html that's generated in script
 export function modeSelected() {
-    cleanupGame();
     updateSimfileState(SimfileState.DIFFICULTY_SELECTED);
-}
-
-// noinspection JSUnusedLocalSymbols
-export function finishParse() {
     let selectedMode: number = parseInt((<HTMLInputElement>document.getElementById("mode-select")).value);
-    let tracks: Note[][] = getFullParse(selectedMode, localStartedParse);
-    prepareDisplay(tracks);
-    cleanupGame();
-    updateSimfileState(SimfileState.SIMFILE_PARSED, tracks.length);
+    Globals.PARSED_NOTES = getFullParse(selectedMode, localStartedParse);
+    setAllNotesToDefault(Globals.PARSED_NOTES);
+    replaceNotYetImplementedNoteTypes(Globals.PARSED_NOTES);
+    Globals.CURRENT_GAME_AREA = new PreviewDisplay(Globals.PARSED_NOTES, config);
+    updateSimfileState(SimfileState.SIMFILE_PARSED, Globals.PARSED_NOTES.length);
 }
 
 export function goToPrepareGameplay() {
     disablePlayButton();
-    startGame();
+    Globals.CURRENT_GAME_AREA.remove();
+    Globals.CURRENT_GAME_AREA = new PlayingDisplay(Globals.PARSED_NOTES, config);
 }
 
 export function bindingClicked(bindingIndex: number) {
-    bindingManager.expectingKeyInput = true;
-    bindingManager.receivingIndex = bindingIndex;
+    keyBindingManager.expectingKeyInput = true;
+    keyBindingManager.receivingIndex = bindingIndex;
 }
 
 export function configUpdated(configOptionCode: number) {
-    switch(configOptionCode) {
+    switch (configOptionCode) {
         case ConfigOption.SECONDS_PER_PIXEL:
             config.updateSecondsPerPixel();
             break;
@@ -227,5 +165,5 @@ export function configUpdated(configOptionCode: number) {
 }
 
 export function autoPauseAtStart() {
-    config.setPauseAtStartToDefault();
+    Globals.CURRENT_GAME_AREA.config.setPauseAtStartToDefault(Globals.CURRENT_GAME_AREA.noteManager);
 }

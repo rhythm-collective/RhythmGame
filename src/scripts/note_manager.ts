@@ -1,17 +1,4 @@
-export enum NoteType {
-    NONE = "0",
-    NORMAL = "1",
-    HOLD_HEAD = "2",
-    TAIL = "3",
-    ROLL_HEAD = "4",
-    MINE = "M",
-}
-
-export class Note {
-    type: string;
-    time: number;
-    isHit: boolean;
-}
+import {Note} from "./parsing";
 
 export class NoteManager {
     tracks: Note[][];
@@ -20,30 +7,30 @@ export class NoteManager {
         this.tracks = tracks;
     }
 
-    getNotesByTimeRange(leastTime: number, greatestTime: number, trackNumber: number): Note[] {
+    getNotesByTimeRange(leastTime: number, greatestTime: number, trackNumber: number): { startIndex: number, endIndexNotInclusive: number } {
         let track = this.tracks[trackNumber];
         let firstFindResult = this.findIndexOfFirstNoteAfterTime(leastTime, track);
-        if(firstFindResult < 0) {
-            return []; // no notes left
+        if (firstFindResult < 0) {
+            return {startIndex: -1, endIndexNotInclusive: -1}; // no notes left after least time
         }
         let lastFindResult = this.findIndexOfFirstNoteAfterTime(greatestTime, track, firstFindResult);
-        if(lastFindResult < 0) {
+        if (lastFindResult < 0) {
             lastFindResult = track.length; // greatestTime exceeds the end of the notes
         }
-        if(firstFindResult === 0) {
-            if(lastFindResult === 0) {
-                return []; // haven't seen first note
-            }
-            else {
-                return track.slice(0, lastFindResult); // notes are just starting
+        if (firstFindResult === 0) {
+            if (lastFindResult === 0) {
+                return {startIndex: -1, endIndexNotInclusive: -1}; // haven't seen first note
+            } else {
+                return {startIndex: 0, endIndexNotInclusive: lastFindResult}; // notes are just starting
             }
         }
-        return track.slice(firstFindResult, lastFindResult); // remember that the end index is not inclusive
+        return {startIndex: firstFindResult, endIndexNotInclusive: lastFindResult};
     }
 
+    // This function assumes that no two notes will have the same time in the same track
     findIndexOfFirstNoteAfterTime(keyTime: number, track: Note[], searchStart = 0) {
         for (let i = searchStart; i < track.length; i++) {
-            if (track[i].time > keyTime) {
+            if (track[i].timeInSeconds > keyTime) {
                 return i;
             }
         }
@@ -52,12 +39,12 @@ export class NoteManager {
 
     getEarliestNote(): Note {
         let earliestNote: Note;
-        for(let i = 0; i < this.tracks.length; i++) {
-            if(this.tracks[i].length > 0) {
+        for (let i = 0; i < this.tracks.length; i++) {
+            if (this.tracks[i].length > 0) {
                 let trackEarliestNote: Note = this.tracks[i][0];
-                if(earliestNote == undefined) {
+                if (earliestNote == undefined) {
                     earliestNote = trackEarliestNote;
-                } else if(earliestNote.time > trackEarliestNote.time) {
+                } else if (earliestNote.timeInSeconds > trackEarliestNote.timeInSeconds) {
                     earliestNote = trackEarliestNote;
                 }
             }
@@ -67,12 +54,12 @@ export class NoteManager {
 
     getLatestNote(): Note {
         let latestNote: Note;
-        for(let i = 0; i < this.tracks.length; i++) {
-            if(this.tracks[i].length > 0) {
+        for (let i = 0; i < this.tracks.length; i++) {
+            if (this.tracks[i].length > 0) {
                 let trackLatestNote: Note = this.tracks[i][this.tracks[i].length - 1];
-                if(latestNote == undefined) {
+                if (latestNote == undefined) {
                     latestNote = trackLatestNote;
-                } else if(latestNote.time < trackLatestNote.time) {
+                } else if (latestNote.timeInSeconds < trackLatestNote.timeInSeconds) {
                     latestNote = trackLatestNote;
                 }
             }

@@ -1,10 +1,28 @@
-/* Step One Of Parsing */
-
-import {Note} from "./note_manager";
-
 export class PartialParse {
     metaData: Map<string, string>;
     modes: Map<string, string>[];
+}
+
+export enum NoteType {
+    NONE = "0",
+    NORMAL = "1",
+    HOLD_HEAD = "2",
+    TAIL = "3",
+    ROLL_HEAD = "4",
+    MINE = "M",
+}
+
+export enum NoteState {
+    DEFAULT,
+    HIT,
+    MISSED,
+    HELD,
+}
+
+export class Note {
+    type: string;
+    timeInSeconds: number;
+    state?: NoteState;
 }
 
 export class FullParse {
@@ -21,6 +39,7 @@ export class FullParse {
     }
 }
 
+/* Step One Of Parsing */
 export function getPartialParse(fileContents: string) {
     let partialParse: PartialParse = new PartialParse();
     partialParse.metaData = getTopMetaDataAsStrings(fileContents);
@@ -65,6 +84,7 @@ function cleanMetaDataString(string: string): string {
 
 /* Step Two Of Parsing */
 
+// TODO: actually return FullParse
 export function getFullParse(modeIndex: number, partialParse: PartialParse): Note[][] {
     let fullParse = new FullParse(partialParse);
     let unparsedNotes: string = partialParse.modes[modeIndex].get("notes");
@@ -217,7 +237,7 @@ function getTracksFromLines(timesBeatsAndLines: { time: number; beat: number; li
         for (let j = 0; j < line.lineInfo.length; j++) {
             let noteType = line.lineInfo.charAt(j);
             if (noteType !== "0") {
-                tracks[j].push({type: noteType, time: line.time, isHit: false}); //TODO: isHit: false should be done elsewhere
+                tracks[j].push({type: noteType, timeInSeconds: line.time});
             }
         }
     }

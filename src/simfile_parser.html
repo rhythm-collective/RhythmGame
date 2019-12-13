@@ -10,29 +10,22 @@
                 <span id="upload-simfile-section">
                     <input type="file" accept=".sm" id="upload" onchange="simparser.simfileUploaded()"><br>
                 </span>
-                <span id="start-parse-section" style="display: none">
-                    <input type="button" value="Start Parse" onclick="simparser.preparseSimfile()"><br>
-                </span>
             </div>
             <div class="column">
                 <span id="upload-audio-file-section">
                     <input type="file" accept="audio/*" id="audio-upload" onchange="simparser.audioFileUploaded()"><br>
                 </span>
-                <input type="button" id="load-audio-file-section" value="Load File" style="display: none;" onclick="simparser.bufferAudioFile()"><br>
             </div>
         </div>
         <span id="select-mode-section" style="display: none;"></span>
-        <span id="finish-parse-section" style="display: none;">
-            <input type="button" value="Finish Parse" onclick="simparser.finishParse()"><br>
-        </span>
         <span id="graphical-display-section" style="display: none"></span>
     </div>
     <div class="column">
         <span id="gameplay-settings-section">
             <label for="scroll-speed" class="gameplay-option-label">Scroll Speed (px/sec)</label>
-            <input id="scroll-speed" type="text" value="200" onchange="simparser.configUpdated(0)"><br>
+            <input id="scroll-speed" type="text" onchange="simparser.configUpdated(0)"><br>
             <label for="receptor-position" class="gameplay-option-label">Receptor Position (%)</label>
-            <input id="receptor-position" type="text" value="10" onchange="simparser.configUpdated(1)"><br>
+            <input id="receptor-position" type="text" onchange="simparser.configUpdated(1)"><br>
             <label for="scroll-direction" class="gameplay-option-label">Scroll Direction</label>
             <select id="scroll-direction" onchange="simparser.configUpdated(2)">
                 <option value="UP">Up</option>
@@ -40,17 +33,7 @@
             </select><br>
             <span class="accuracy-settings-section">
                 <label for="accuracy-settings">Accuracy Settings</label>
-                <textarea rows="5" cols="66" id="accuracy-settings" onchange="simparser.configUpdated(4)">[
-    {"name": "Miss", "upperBound": -117},
-    {"name": "Average", "lowerBound": -117, "upperBound": -83},
-    {"name": "Good", "lowerBound": -83, "upperBound": -50},
-    {"name": "Perfect", "lowerBound": -50, "upperBound": -17},
-    {"name": "Amazing", "lowerBound": -17, "upperBound": 17},
-    {"name": "Perfect", "lowerBound": 17, "upperBound":  50},
-    {"name": "Good", "lowerBound": 50, "upperBound": 83},
-    {"name": "Average", "lowerBound": 83, "upperBound": 117},
-    {"name": "Boo", "lowerBound": 117}
-]</textarea><br>
+                <textarea rows="5" cols="66" id="accuracy-settings" onchange="simparser.configUpdated(4)"></textarea><br>
             </span>
             <label for="audio-start-delay" class="gameplay-option-label">Note Time Offset (ms)</label>
             <input id="audio-start-delay" type="text" value="0" onchange="simparser.configUpdated(3)"><br>

@@ -1,28 +1,30 @@
 import * as p5 from "p5";
-import {noteManager} from "./playing_display";
-import {accuracyManager} from "./gameplay";
+
+import {NoteManager} from "./note_manager";
+import {AccuracyManager} from "./accuracy_manager";
 
 export function drawAccuracyBars(p: p5, accuracyLabels: string[],
                                  accuracyRecording: { time: number; accuracy: number }[][],
                                  centerX: number, centerY: number, textSize: number, barWidth: number,
-                                 barHeight: number) {
+                                 barHeight: number, noteManager: NoteManager, accuracyManager: AccuracyManager) {
     let maxTextWidth = getMaxTextWidth(p, accuracyLabels, textSize);
     let totalNotes = noteManager.getTotalNotes();
     let barSpacing = 10;
     let totalHeight = accuracyLabels.length * barHeight + (accuracyLabels.length - 1) * barSpacing;
     let startY = (p.height - totalHeight) / 2 + barHeight / 2;
-    for(let i = 0; i < accuracyLabels.length; i++) {
+    for (let i = 0; i < accuracyLabels.length; i++) {
         let accuracyLabel = accuracyLabels[i];
-        let numAccuracyEvents = getNumAccuracyEvents(accuracyLabel, accuracyRecording);
+        let numAccuracyEvents = getNumAccuracyEvents(accuracyLabel, accuracyRecording, accuracyManager);
         let percentFilled = numAccuracyEvents / totalNotes;
         drawAccuracyBar(p, centerX, startY + i * (barHeight + barSpacing), accuracyLabel, numAccuracyEvents.toString(), totalNotes.toString(), textSize, maxTextWidth, barWidth, barHeight, percentFilled);
     }
 }
 
-function getNumAccuracyEvents(accuracyLabel: string, accuracyRecording: { time: number; accuracy: number }[][]) {
+function getNumAccuracyEvents(accuracyLabel: string, accuracyRecording: { time: number; accuracy: number }[][],
+                              accuracyManager: AccuracyManager) {
     return accuracyRecording.reduce((sum, trackRecording) =>
         sum + trackRecording.filter(accuracyEvent =>
-            accuracyManager.getAccuracyName(accuracyEvent.accuracy) === accuracyLabel).length, 0);
+        accuracyManager.getAccuracyName(accuracyEvent.accuracy) === accuracyLabel).length, 0);
 }
 
 function getMaxTextWidth(p: p5, textArray: string[], textSize: number) {

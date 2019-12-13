@@ -1,10 +1,10 @@
-import {displayManager, noteManager} from "./playing_display";
-import {Accuracy, TimeManager} from "./gameplay";
-
-export enum ScrollDirection {
-    UP,
-    DOWN,
-}
+import {Accuracy} from "./accuracy_manager";
+import {TimeManager} from "./time_manager";
+import {BiDirectionalMap} from "./bi_directional_map";
+import {DEFAULT_CONFIG} from "./default_config";
+import {defaultIfUndefined} from "./util";
+import {ScrollDirection} from "./scroll_direction";
+import {NoteManager} from "./note_manager";
 
 export enum ConfigOption {
     SECONDS_PER_PIXEL,
@@ -15,21 +15,56 @@ export enum ConfigOption {
     PAUSE_AT_START,
 }
 
+//TODO: make scroll direction consistent with the visual scroll direction, i.e. scrolling up always makes the notes go up?
+// But what about when scroll direction is controlled by an angle? Maybe I should just leave it how it is.
+//TODO: use gameAreaHeight and width to determine the height and width of the game area
+//TODO: update the UI to reflect what the default config contains
 export class Config {
     secondsPerPixel: number;
     receptorYPosition: number;
     scrollDirection: ScrollDirection;
-    additionalOffset: number; // in seconds
+    additionalOffsetInSeconds: number;
     accuracySettings: Accuracy[];
-    pauseAtStart: number; // in seconds
+    pauseAtStartInSeconds: number;
+    keyBindings: BiDirectionalMap<string, number> = new BiDirectionalMap<string, number>();
+    gameAreaHeight: number;
+    gameAreaWidth: number;
 
-    constructor(secondsPerPixel: number, receptorYPosition: number, scrollDirection: ScrollDirection,
-                additionalOffset: number, pauseAtStart: number) {
-        this.secondsPerPixel = secondsPerPixel;
-        this.receptorYPosition = receptorYPosition;
-        this.scrollDirection = scrollDirection;
-        this.additionalOffset = additionalOffset;
-        this.pauseAtStart = pauseAtStart;
+    constructor(args: {
+                    secondsPerPixel?: number,
+                    receptorYPosition?: number,
+                    scrollDirection?: ScrollDirection,
+                    additionalOffsetInSeconds?: number,
+                    accuracySettings?: Accuracy[],
+                    pauseAtStartInSeconds?: number,
+                    keyBindings?: BiDirectionalMap<string, number>,
+                    gameAreaHeight?: number,
+                    gameAreaWidth?: number,
+                }
+    ) {
+        this.gameAreaHeight = defaultIfUndefined(args.gameAreaHeight, DEFAULT_CONFIG.gameAreaHeight);
+        this.gameAreaWidth = defaultIfUndefined(args.gameAreaWidth, DEFAULT_CONFIG.gameAreaWidth);
+
+        this.secondsPerPixel = defaultIfUndefined(args.secondsPerPixel, DEFAULT_CONFIG.secondsPerPixel);
+        this.setSecondsPerPixel();
+
+        this.scrollDirection = defaultIfUndefined(args.scrollDirection, DEFAULT_CONFIG.scrollDirection);
+        this.setScrollDirection();
+
+        // NOTE: Scroll direction and gameAreaHeight must be set BEFORE setting receptorYPosition
+        this.receptorYPosition = defaultIfUndefined(args.receptorYPosition, DEFAULT_CONFIG.receptorYPosition);
+        this.setReceptorYPosition();
+
+        this.additionalOffsetInSeconds = defaultIfUndefined(args.additionalOffsetInSeconds, DEFAULT_CONFIG.additionalOffsetInSeconds);
+        this.setAdditionalOffsetInSeconds();
+
+        this.accuracySettings = defaultIfUndefined(args.accuracySettings, DEFAULT_CONFIG.accuracySettings);
+        this.setAccuracySettings();
+
+        this.pauseAtStartInSeconds = defaultIfUndefined(args.pauseAtStartInSeconds, DEFAULT_CONFIG.pauseAtStartInSeconds);
+        this.setPauseAtStartInSeconds();
+
+        this.keyBindings = defaultIfUndefined(args.keyBindings, DEFAULT_CONFIG.keyBindings);
     }
 
     updateSecondsPerPixel() {
@@ -48,30 +83,30 @@ export class Config {
 
     updateScrollDirection() {
         let scrollDirection: ScrollDirection = this.getScrollDirection();
-        if(scrollDirection != null) {
+        if (scrollDirection != null) {
             this.scrollDirection = scrollDirection;
             this.updateReceptorYPosition();
         }
     }
 
     updateAudioStartDelay() {
-        let additionalOffset: number = this.getAdditionalOffset();
-        if(additionalOffset != null && additionalOffset != NaN) {
-            this.additionalOffset = additionalOffset;
+        let additionalOffset: number = this.getAdditionalOffsetInSeconds();
+        if (additionalOffset != null && additionalOffset != NaN) {
+            this.additionalOffsetInSeconds = additionalOffset;
         }
     }
 
     updateAccuracySettings() {
         let accuracySettings: Accuracy[] = this.getAccuracySettings();
-        if(accuracySettings != null) {
+        if (accuracySettings != null) {
             this.accuracySettings = accuracySettings;
         }
     }
 
     updatePauseAtStart() {
         let pauseAtStart: number = this.getPauseAtStart();
-        if(pauseAtStart != null && pauseAtStart != NaN) {
-            this.pauseAtStart = pauseAtStart;
+        if (pauseAtStart != null && pauseAtStart != NaN) {
+            this.pauseAtStartInSeconds = pauseAtStart;
         }
     }
 
@@ -79,48 +114,83 @@ export class Config {
         return 1 / parseFloat((<HTMLInputElement>document.getElementById("scroll-speed")).value);
     }
 
+    private setSecondsPerPixel() {
+        (<HTMLInputElement>document.getElementById("scroll-speed")).value = (1 / this.secondsPerPixel).toString();
+    }
+
     private getReceptorYPosition(): number {
         let receptorPositionPercentage = parseFloat(
             (<HTMLInputElement>document.getElementById("receptor-position")).value
         ) / 100;
         if (this.scrollDirection == ScrollDirection.UP) {
-            return receptorPositionPercentage * displayManager.getCanvasHeight();
+            return receptorPositionPercentage * this.gameAreaHeight;
+        } else {
+            return (1 - receptorPositionPercentage) * this.gameAreaHeight;
         }
-        else {
-            return (1 - receptorPositionPercentage) * displayManager.getCanvasHeight();
+    }
+
+    private setReceptorYPosition() {
+        let receptorPositionPercentage;
+        if (this.scrollDirection == ScrollDirection.UP) {
+            receptorPositionPercentage = (this.receptorYPosition / this.gameAreaHeight) * 100;
+        } else {
+            receptorPositionPercentage = (1 - (this.receptorYPosition / this.gameAreaHeight)) * 100;
         }
+        (<HTMLInputElement>document.getElementById("receptor-position")).value = Math.round(receptorPositionPercentage).toString();
     }
 
     private getScrollDirection(): ScrollDirection {
         return ScrollDirection[(
-                <HTMLInputElement>document.getElementById("scroll-direction")
-            ).value as keyof typeof ScrollDirection
-        ];
+            <HTMLInputElement>document.getElementById("scroll-direction")
+        ).value as keyof typeof ScrollDirection];
     }
 
-    private getAdditionalOffset(): number {
+    private setScrollDirection() {
+        (<HTMLInputElement>document.getElementById("scroll-direction")).value = ScrollDirection[this.scrollDirection];
+    }
+
+    private getAdditionalOffsetInSeconds(): number {
         return parseFloat((<HTMLInputElement>document.getElementById("audio-start-delay")).value) / 1000;
     }
 
+    private setAdditionalOffsetInSeconds() {
+        (<HTMLInputElement>document.getElementById("audio-start-delay")).value = (this.additionalOffsetInSeconds * 1000).toString();
+    }
+
     private getAccuracySettings(): Accuracy[] {
-        let array: Accuracy[] = JSON.parse((<HTMLInputElement>document.getElementById("accuracy-settings")).value);
+        let array: Accuracy[];
+        try {
+            array = JSON.parse((<HTMLInputElement>document.getElementById("accuracy-settings")).value);
+        } catch (e) {
+            return null;
+        }
         let accuracySettings: Accuracy[] = [];
-        for(let i = 0; i < array.length; i++) { // this validates whether the user gave the right input
+        for (let i = 0; i < array.length; i++) {
             let object = array[i];
+            // this fails if the user gave the wrong input
             accuracySettings.push(new Accuracy(object.name, object.lowerBound, object.upperBound));
         }
         return accuracySettings;
+    }
+
+    private setAccuracySettings() {
+        (<HTMLInputElement>document.getElementById("accuracy-settings")).value =
+            JSON.stringify(this.accuracySettings, null, 3);
     }
 
     private getPauseAtStart(): number {
         return parseFloat((<HTMLInputElement>document.getElementById("pause-at-start")).value) / 1000;
     }
 
-    public setPauseAtStartToDefault(): void {
+    private setPauseAtStartInSeconds() {
+        (<HTMLInputElement>document.getElementById("pause-at-start")).value = (this.pauseAtStartInSeconds * 1000).toString();
+    }
+
+    public setPauseAtStartToDefault(noteManager: NoteManager): void {
         let timeFromReceptorToScreenEdge: number = this.getTimeFromReceptorToScreenEdge();
         let minimumPauseAtStart: number = Math.max(timeFromReceptorToScreenEdge,
             this.getEarliestAccuracy() / 1000);
-        let currentNaturalPauseAtStart: number = noteManager.getEarliestNote().time - this.getInitalGameTime();
+        let currentNaturalPauseAtStart: number = noteManager.getEarliestNote().timeInSeconds - this.getInitalGameTime();
         let defaultPauseAtStart = Math.max(0, minimumPauseAtStart - currentNaturalPauseAtStart) * 1000;
         (<HTMLInputElement>document.getElementById("pause-at-start")).value =
             Math.round(defaultPauseAtStart).toString();
@@ -128,10 +198,9 @@ export class Config {
     }
 
     private getTimeFromReceptorToScreenEdge(): number {
-        if(this.scrollDirection == ScrollDirection.UP) {
-            return (displayManager.getCanvasHeight() - this.receptorYPosition) * this.secondsPerPixel;
-        }
-        else {
+        if (this.scrollDirection == ScrollDirection.UP) {
+            return (this.gameAreaHeight - this.receptorYPosition) * this.secondsPerPixel;
+        } else {
             return this.receptorYPosition * this.secondsPerPixel;
         }
     }
@@ -145,6 +214,6 @@ export class Config {
     }
 
     private getInitalGameTime(): number {
-        return new TimeManager(0).getGameTime(0) + this.getPauseAtStart();
+        return new TimeManager(0, this).getGameTime(0) + this.getPauseAtStart();
     }
 }
