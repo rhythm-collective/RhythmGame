@@ -1,0 +1,21 @@
+name: Build Game Image
+
+on:
+  push:
+    branches:
+    - master
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+    - name: Publish Image
+      uses: matootie/github-docker@v2.0.0
+      with:
+        accessToken: ${{ secrets.GITHUB_TOKEN }}
+        imageTag: $GITHUB_SHA
