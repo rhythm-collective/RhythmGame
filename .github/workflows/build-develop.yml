@@ -19,6 +19,8 @@ jobs:
       uses: actions/checkout@v2
     - name: Publish Image
       uses: matootie/github-docker@v2.0.0
+      env:
+        sha: $GITHUB_SHA
       with:
         accessToken: ${{ secrets.GITHUB_TOKEN }}
-        imageTag: $GITHUB_SHA
+        imageTag: ${{ secrets.GITHUB_SHA }}
