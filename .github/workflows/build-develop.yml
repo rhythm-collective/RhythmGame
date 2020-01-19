@@ -1,4 +1,4 @@
-name: Build Game Image
+name: Build Rhythm Game Image
 
 on:
   push:
@@ -15,8 +15,6 @@ on:
 jobs:
   push:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-
     steps:
       - uses: actions/checkout@v2
 
