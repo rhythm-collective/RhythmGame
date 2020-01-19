@@ -8,7 +8,7 @@ RUN mkdir -p /run/nginx
 ADD docker/nginx.conf /etc/nginx/nginx.conf
 
 RUN mkdir -p /data
-ADD src/* /data
+ADD src/* /data/
 
 ADD docker/run.sh /usr/local/bin/run.sh
 RUN chmod +x /usr/local/bin/run.sh

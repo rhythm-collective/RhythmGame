@@ -1,4 +1,4 @@
-name: Build Rhythm Game Image
+name: Build and Push RC Image
 
 on:
   push:
