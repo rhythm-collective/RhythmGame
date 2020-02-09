@@ -24,5 +24,6 @@ export let DEFAULT_CONFIG = {
     pauseAtStartInSeconds: 0,
     keyBindings: new BiDirectionalMap<string, number>({"E": 0, "F": 1, "K": 2, "O": 3}),
     gameAreaHeight: 600,
-    gameAreaWidth: 400
+    gameAreaWidth: 400,
+    noteSize: 20
 };

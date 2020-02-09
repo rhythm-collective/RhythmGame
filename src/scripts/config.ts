@@ -29,6 +29,7 @@ export class Config {
     keyBindings: BiDirectionalMap<string, number> = new BiDirectionalMap<string, number>();
     gameAreaHeight: number;
     gameAreaWidth: number;
+    noteSize: number;
 
     constructor(args: {
                     secondsPerPixel?: number,
@@ -40,6 +41,7 @@ export class Config {
                     keyBindings?: BiDirectionalMap<string, number>,
                     gameAreaHeight?: number,
                     gameAreaWidth?: number,
+                    noteSize?: number,
                 }
     ) {
         this.gameAreaHeight = defaultIfUndefined(args.gameAreaHeight, DEFAULT_CONFIG.gameAreaHeight);
@@ -63,6 +65,8 @@ export class Config {
 
         this.pauseAtStartInSeconds = defaultIfUndefined(args.pauseAtStartInSeconds, DEFAULT_CONFIG.pauseAtStartInSeconds);
         this.setPauseAtStartInSeconds();
+
+        this.noteSize = defaultIfUndefined(args.noteSize, DEFAULT_CONFIG.noteSize);
 
         this.keyBindings = defaultIfUndefined(args.keyBindings, DEFAULT_CONFIG.keyBindings);
     }

@@ -14,17 +14,21 @@ export class PreviewDisplay {
     private scrollManager: ScrollManager;
     private displayManager: DisplayManager;
 
-    constructor(tracks: Note[][], config: Config) {
+    constructor(tracks: Note[][], config: Config, scene: P5Scene) {
         this.config = config;
+        this.scene = scene;
         this.noteManager = new NoteManager(tracks);
         this.scrollManager = new ScrollManager(this.config);
-        this.scene = new P5Scene(this.config.gameAreaWidth, this.config.gameAreaHeight,
-            (canvas: HTMLCanvasElement, p: p5) => {
-                this.displayManager = new DisplayManager(this.noteManager, canvas, this.config, p);
-                canvas.addEventListener("wheel", (e: WheelEvent) => this.scrollManager.canvasScrolled(e));
-            }, () => {
-                this.displayManager.draw(this.scrollManager.getGameTime());
-            });
+        this.displayManager = new DisplayManager(this.noteManager, this.scene.canvas, this.config, this.scene.sketchInstance);
+        this.scene.canvas.addEventListener("wheel", (e: WheelEvent) => this.scrollManager.canvasScrolled(e));
+        // this.scene = new P5Scene(this.config.gameAreaWidth, this.config.gameAreaHeight,
+        //     (canvas: HTMLCanvasElement, p: p5) => {
+        //     }, () => {
+        //     });
+    }
+
+    draw() {
+        this.displayManager.draw(this.scrollManager.getGameTime());
     }
 
     remove() {
