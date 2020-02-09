@@ -51,19 +51,43 @@ abstract class Scene1 {
 abstract class Scene2 {
     public static draw() {
         drawHeading();
-        let p: p5 = global.p5Scene.sketchInstance;
-        p.push();
-        p.textSize(20);
-        let labelString = "label";
-        p.text(labelString, 400, 150);
+        let secondsPerPixelInput = createLabelledInput("Scroll Speed (px/sec)", "secondsPerPixelInput", 15, 400, 150);
         // @ts-ignore
-        let canvasPosition: { x: number, y: number } = p._renderer.position();
-        let input = DOMWrapper.create(() => {
-            return p.createInput(global.config.secondsPerPixel.toString());
-        }, "secondsPerPixelInput").element;
-        input.position(400 + p.textWidth(labelString) + canvasPosition.x, 150 + canvasPosition.y - 20);
-        p.pop();
+        secondsPerPixelInput.input(() => {
+            let value: string | number = secondsPerPixelInput.value();
+            if (typeof value === "string") {
+                value = parseFloat(value);
+            }
+            if (!isNaN(value) && value > 0) {
+                global.config.secondsPerPixel = 1 / value;
+            } else {
+                throw Error("Invalid value for scroll speed: " + value);
+            }
+        });
     }
+}
+
+function createLabelledInput(labelString: string, uniqueId: string, labelFontSize: number, labelX: number, labelY: number) {
+    let p: p5 = global.p5Scene.sketchInstance;
+    p.push();
+    let inputFontSize = labelFontSize * 0.9;
+    let inputRelativeLength = 8.0;
+    let relativeSpacing = 1.0;
+    p.textSize(labelFontSize);
+    p.text(labelString, labelX, labelY);
+    // @ts-ignore
+    let canvasPosition: { x: number, y: number } = p._renderer.position();
+    let input = DOMWrapper.create(() => {
+        return p.createInput(global.config.secondsPerPixel.toString());
+    }, uniqueId).element;
+    input.style("font-size", inputFontSize + "px");
+    input.size(inputRelativeLength * inputFontSize);
+    let inputSize: { width?: number, height?: number } = input.size();
+    input.position(canvasPosition.x + labelX + p.textWidth(labelString) + relativeSpacing * labelFontSize,
+        canvasPosition.y + labelY - (inputSize.height / 2) - (p.textAscent() * 0.35));
+    // @ts-ignore
+    p.pop();
+    return input;
 }
 
 function drawHeading() {
