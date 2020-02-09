@@ -10,12 +10,14 @@ class NoteDisplay {
     y: number;
     noteType: string;
     private canvas: HTMLCanvasElement;
+    noteSize: number;
 
-    constructor(x: number, y: number, noteType: string, canvas: HTMLCanvasElement) {
+    constructor(x: number, y: number, noteType: string, canvas: HTMLCanvasElement, noteSize: number) {
         this.canvas = canvas;
         this.x = x;
         this.y = y;
         this.noteType = noteType;
+        this.noteSize = noteSize;
     }
 
     draw() {
@@ -155,7 +157,7 @@ export class DisplayManager {
         if (note.state == NoteState.DEFAULT) {
             let x = this.getNoteX(trackNumber, numTracks);
             let y = this.getNoteY(note.timeInSeconds, currentTime);
-            new NoteDisplay(x, y, note.type, this.canvas).draw();
+            new NoteDisplay(x, y, note.type, this.canvas, this.config.noteSize).draw();
         }
     }
 
@@ -175,7 +177,6 @@ export class DisplayManager {
     }
 
     private getGreatestTime(currentTime: number) {
-        //TODO: Why aren't I using this variable?
         let receptorGap: number; // the gap in the EARLY direction
         if (this.config.scrollDirection == ScrollDirection.UP) {
             receptorGap = this.getCanvasHeight() - this.config.receptorYPosition;

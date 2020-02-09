@@ -11,6 +11,14 @@ export class P5Scene {
                 drawFunction: () => void) {
 
         this.sketchInstance = new p5((p: p5) => {
+            let renderer: p5.Renderer;
+
+            function centerCanvas() {
+                // let centerX = (p.windowWidth - p.width) / 2;
+                // let centerY = (p.windowHeight - p.height) / 2;
+                // renderer.position(centerX, centerY);
+                renderer.center();
+            }
 
             p.setup = function () {
                 this.canvas = p.createCanvas(width, height).elt;
@@ -18,6 +26,10 @@ export class P5Scene {
             };
 
             p.draw = drawFunction;
+
+            p.windowResized = function () {
+                centerCanvas();
+            };
 
         }, gameContainer);
     }
