@@ -9,11 +9,11 @@ class NoteDisplay {
     x: number;
     y: number;
     noteType: string;
-    private canvas: HTMLCanvasElement;
+    private sketchInstance: p5;
     noteSize: number;
 
-    constructor(x: number, y: number, noteType: string, canvas: HTMLCanvasElement, noteSize: number) {
-        this.canvas = canvas;
+    constructor(x: number, y: number, noteType: string, sketchInstance: p5, noteSize: number) {
+        this.sketchInstance = sketchInstance;
         this.x = x;
         this.y = y;
         this.noteType = noteType;
@@ -21,47 +21,54 @@ class NoteDisplay {
     }
 
     draw() {
-        let ctx = this.canvas.getContext("2d");
-        ctx.save();
-        ctx.fillStyle = "black";
+        let p = this.sketchInstance;
+        p.push();
+        p.fill("black");
         switch (this.noteType) {
             case NoteType.NORMAL:
-                ctx.fillRect(this.x, this.y, 20, 20);
+                p.rect(this.x, this.y, 20, 20);
+
                 break;
             case NoteType.HOLD_HEAD:
-                ctx.fillRect(this.x, this.y, 20, 20);
-                ctx.font = "20px Arial";
-                ctx.textAlign = "center";
-                ctx.fillStyle = "white";
-                ctx.fillText("v", this.x + 10, this.y + 16, 20);
+                p.rect(this.x, this.y, 20, 20);
+                p.textSize(20);
+                p.textFont("Arial");
+                p.textAlign(p.CENTER);;
+                p.fill("white");
+                p.text("v", this.x + 10, this.y + 16);
                 break;
             case NoteType.TAIL:
-                ctx.strokeRect(this.x, this.y, 20, 20);
+                p.noFill();
+                p.rect(this.x, this.y, 20, 20);
                 break;
             case NoteType.ROLL_HEAD:
-                ctx.fillRect(this.x, this.y, 20, 20);
-                ctx.font = "20px Arial";
-                ctx.textAlign = "center";
-                ctx.fillStyle = "white";
-                ctx.fillText("x", this.x + 10, this.y + 16, 20);
+                p.rect(this.x, this.y, 20, 20);
+                p.textSize(20);
+                p.textFont("Arial");
+                p.textAlign(p.CENTER);
+                p.fill("white");
+                p.text("x", this.x + 10, this.y + 16);
                 break;
             case NoteType.MINE:
-                ctx.beginPath();
-                ctx.arc(this.x + 10, this.y + 10, 12, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.font = "20px Arial";
-                ctx.textAlign = "center";
-                ctx.fillStyle = "white";
-                ctx.fillText("X", this.x + 10, this.y + 18, 20);
+                p.fill("black");
+                p.circle(this.x + 10, this.y + 10, 24);
+                p.textSize(20);
+                p.textFont("Arial");
+                p.textAlign(p.CENTER);
+                p.fill("white");
+                p.text("X", this.x + 10, this.y + 18);
                 break;
             default:
-                ctx.strokeRect(this.x, this.y, 20, 20);
-                ctx.font = "20px Arial";
-                ctx.textAlign = "center";
-                ctx.fillText("?", this.x + 10, this.y + 18, 20);
+                p.noFill();
+                p.rect(this.x, this.y, 20, 20);
+                p.fill("black");
+                p.textSize(20);
+                p.textFont("Arial");
+                p.textAlign(p.CENTER);
+                p.text("?", this.x + 10, this.y + 18);
                 break;
         }
-        ctx.restore();
+        p.pop();
     }
 }
 
@@ -69,41 +76,41 @@ class HoldConnector {
     x: number;
     startY: number;
     endY: number;
-    private canvas: HTMLCanvasElement;
+    private sketchInstance: p5;
 
-    constructor(x: number, startY: number, endY: number, canvas: HTMLCanvasElement) {
-        this.canvas = canvas;
+    constructor(x: number, startY: number, endY: number, sketchInstance: p5) {
+        this.sketchInstance = sketchInstance;
         this.x = x;
         this.startY = startY;
         this.endY = endY;
     }
 
     draw() {
-        let ctx = this.canvas.getContext("2d");
-        ctx.fillStyle = "black";
-        ctx.save();
-        ctx.fillRect(this.x + 5, this.startY, 10, this.endY - this.startY);
-        ctx.restore();
+        let p = this.sketchInstance;
+        p.push();
+        p.fill("black");
+        p.rect(this.x + 5, this.startY, 10, this.endY - this.startY);
+        p.pop();
     }
 }
 
 class Receptor {
     x: number;
     y: number;
-    private canvas: HTMLCanvasElement;
+    private sketchInstance: p5;
 
-    constructor(x: number, y: number, canvas: HTMLCanvasElement) {
-        this.canvas = canvas;
+    constructor(x: number, y: number, sketchInstance: p5) {
+        this.sketchInstance = sketchInstance;
         this.x = x;
         this.y = y;
     }
 
     draw() {
-        let ctx = this.canvas.getContext("2d");
-        ctx.fillStyle = "black";
-        ctx.save();
-        ctx.strokeRect(this.x, this.y, 20, 20);
-        ctx.restore();
+        let p = this.sketchInstance;
+        p.push();
+        p.noFill();
+        p.rect(this.x, this.y, 20, 20);
+        p.pop();
     }
 }
 
@@ -111,21 +118,28 @@ class Receptor {
 export class DisplayManager {
     private config: Config;
     noteManager: NoteManager;
-    private canvas: HTMLCanvasElement;
     private currentTimeInSeconds: number;
-    private p: p5;
+    private sketchInstance: p5;
+    private topLeftX: number;
+    private topLeftY: number;
+    private width: number;
+    private height: number;
 
-    constructor(noteManager: NoteManager, canvas: HTMLCanvasElement, config: Config, p: p5) {
+    constructor(noteManager: NoteManager, config: Config, sketchInstance: p5, topLeftX: number = 40,
+                topLeftY: number = 40, width: number = 180, height: number = 400) {
         this.config = config;
-        this.canvas = canvas;
         this.noteManager = noteManager;
         this.currentTimeInSeconds = 0;
-        this.p = p;
+        this.sketchInstance = sketchInstance;
+        this.topLeftX = topLeftX;
+        this.topLeftY = topLeftY;
+        this.width = width;
+        this.height = height;
     }
 
     draw(currentTimeInSeconds: number) {
         this.currentTimeInSeconds = currentTimeInSeconds;
-        this.clear();
+        this.sketchInstance.rect(this.topLeftX, this.topLeftY, this.width, this.height);
         this.drawNotesAndConnectors();
         this.drawReceptors();
     }
@@ -157,55 +171,50 @@ export class DisplayManager {
         if (note.state == NoteState.DEFAULT) {
             let x = this.getNoteX(trackNumber, numTracks);
             let y = this.getNoteY(note.timeInSeconds, currentTime);
-            new NoteDisplay(x, y, note.type, this.canvas, this.config.noteSize).draw();
+            new NoteDisplay(x, y, note.type, this.sketchInstance, this.config.noteSize).draw();
         }
-    }
-
-    private clear() {
-        let ctx = this.canvas.getContext("2d");
-        ctx.clearRect(0, 0, this.getCanvasWidth(), this.getCanvasHeight());
     }
 
     private getLeastTime(currentTime: number) {
         let receptorGap: number; // the gap in the LATE direction
-        if (this.config.scrollDirection == ScrollDirection.UP) {
+        if (this.config.scrollDirection == ScrollDirection.Up) {
             receptorGap = this.config.receptorYPosition;
         } else {
             receptorGap = this.getCanvasHeight() - this.config.receptorYPosition;
         }
-        return currentTime - (receptorGap * this.config.secondsPerPixel);
+        return currentTime - (receptorGap / this.config.pixelsPerSecond);
     }
 
     private getGreatestTime(currentTime: number) {
         let receptorGap: number; // the gap in the EARLY direction
-        if (this.config.scrollDirection == ScrollDirection.UP) {
+        if (this.config.scrollDirection == ScrollDirection.Up) {
             receptorGap = this.getCanvasHeight() - this.config.receptorYPosition;
         } else {
             receptorGap = this.config.receptorYPosition;
         }
-        return currentTime + (receptorGap * this.config.secondsPerPixel);
+        return currentTime + (receptorGap / this.config.pixelsPerSecond);
     }
 
     private getNoteX(trackNumber: number, numTracks: number) {
         let noteTrackSize = this.getCanvasWidth() / (numTracks + (numTracks + 1) / 2);
-        return (0.5 + trackNumber * 1.5) * noteTrackSize;
+        return (0.5 + trackNumber * 1.5) * noteTrackSize + this.topLeftX;
     }
 
     private getNoteY(noteTime: number, currentTime: number) {
         let timeDistance = noteTime - currentTime;
-        if (this.config.scrollDirection == ScrollDirection.UP) {
-            return this.config.receptorYPosition + (timeDistance / this.config.secondsPerPixel);
+        if (this.config.scrollDirection == ScrollDirection.Up) {
+            return this.config.receptorYPosition + (this.config.pixelsPerSecond * timeDistance) + this.topLeftY;
         } else {
-            return this.config.receptorYPosition - (timeDistance / this.config.secondsPerPixel);
+            return this.config.receptorYPosition - (this.config.pixelsPerSecond * timeDistance) + this.topLeftY;
         }
     }
 
     private getCanvasWidth(): number {
-        return this.p.width;
+        return this.width;
     }
 
     private getCanvasHeight(): number {
-        return this.p.height;
+        return this.height;
     }
 
     private drawAllConnectors(leastTime: number, greatestTime: number) {
@@ -270,14 +279,15 @@ export class DisplayManager {
             startY = this.getNoteY(startNote.timeInSeconds, currentTime);
         }
 
-        let endY = this.getNoteY(endNote.timeInSeconds, currentTime);
-        new HoldConnector(x, startY, endY, this.canvas).draw();
+        let endY = this.getNoteY(endNote.timeInSeconds - (this.config.noteSize / this.config.pixelsPerSecond), currentTime);
+        new HoldConnector(x, startY, endY, this.sketchInstance).draw();
     }
 
     private drawReceptors() {
         let numTracks = this.noteManager.tracks.length;
         for (let i = 0; i < numTracks; i++) {
-            new Receptor(this.getNoteX(i, numTracks), this.config.receptorYPosition, this.canvas).draw();
+            new Receptor(this.getNoteX(i, numTracks), this.getNoteY(this.currentTimeInSeconds, this.currentTimeInSeconds),
+                this.sketchInstance).draw();
         }
     }
 }

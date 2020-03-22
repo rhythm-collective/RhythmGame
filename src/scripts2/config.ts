@@ -4,8 +4,9 @@ import {BiDirectionalMap} from "../scripts/bi_directional_map";
 import {defaultIfUndefined} from "../scripts/util";
 import {DEFAULT_CONFIG} from "../scripts/default_config";
 
+// Essential config: scroll speed, scroll direction, game width/height, additional offset, pause at start
 export class Config {
-    secondsPerPixel: number;
+    pixelsPerSecond: number;
     receptorYPosition: number;
     scrollDirection: ScrollDirection;
     additionalOffsetInSeconds: number;
@@ -17,7 +18,7 @@ export class Config {
     noteSize: number;
 
     constructor(args: {
-                    secondsPerPixel?: number,
+                    pixelsPerSecond?: number,
                     receptorYPosition?: number,
                     scrollDirection?: ScrollDirection,
                     additionalOffsetInSeconds?: number,
@@ -32,7 +33,7 @@ export class Config {
         this.gameAreaHeight = defaultIfUndefined(args.gameAreaHeight, DEFAULT_CONFIG.gameAreaHeight);
         this.gameAreaWidth = defaultIfUndefined(args.gameAreaWidth, DEFAULT_CONFIG.gameAreaWidth);
 
-        this.secondsPerPixel = defaultIfUndefined(args.secondsPerPixel, DEFAULT_CONFIG.secondsPerPixel);
+        this.pixelsPerSecond = defaultIfUndefined(args.pixelsPerSecond, DEFAULT_CONFIG.pixelsPerSecond);
         // this.setSecondsPerPixel();
 
         this.scrollDirection = defaultIfUndefined(args.scrollDirection, DEFAULT_CONFIG.scrollDirection);

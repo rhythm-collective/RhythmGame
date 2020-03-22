@@ -3,9 +3,9 @@ import {BiDirectionalMap} from "./bi_directional_map";
 import {ScrollDirection} from "./scroll_direction";
 
 export let DEFAULT_CONFIG = {
-    secondsPerPixel: (1 / 650),
-    scrollDirection: ScrollDirection.DOWN,
-    receptorYPosition: 510,
+    pixelsPerSecond: 650,
+    scrollDirection: ScrollDirection.Down,
+    receptorYPosition: 400,
     additionalOffsetInSeconds: 0,
     // This is a symmetrical version of FFR's accuracy
     // TODO: Add a list of presets that live in their own file

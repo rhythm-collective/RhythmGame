@@ -13,7 +13,7 @@ export class ScrollManager {
     }
 
     canvasScrolled(e: WheelEvent) {
-        let timeChange = e.deltaY * this.config.secondsPerPixel * 1000;
+        let timeChange = e.deltaY * this.config.pixelsPerSecond * 1000;
         this.systemTime += timeChange;
     }
 

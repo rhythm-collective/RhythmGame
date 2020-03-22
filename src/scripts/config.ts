@@ -20,7 +20,7 @@ export enum ConfigOption {
 //TODO: use gameAreaHeight and width to determine the height and width of the game area
 //TODO: update the UI to reflect what the default config contains
 export class Config {
-    secondsPerPixel: number;
+    pixelsPerSecond: number;
     receptorYPosition: number;
     scrollDirection: ScrollDirection;
     additionalOffsetInSeconds: number;
@@ -47,7 +47,7 @@ export class Config {
         this.gameAreaHeight = defaultIfUndefined(args.gameAreaHeight, DEFAULT_CONFIG.gameAreaHeight);
         this.gameAreaWidth = defaultIfUndefined(args.gameAreaWidth, DEFAULT_CONFIG.gameAreaWidth);
 
-        this.secondsPerPixel = defaultIfUndefined(args.secondsPerPixel, DEFAULT_CONFIG.secondsPerPixel);
+        this.pixelsPerSecond = defaultIfUndefined(args.secondsPerPixel, DEFAULT_CONFIG.pixelsPerSecond);
         this.setSecondsPerPixel();
 
         this.scrollDirection = defaultIfUndefined(args.scrollDirection, DEFAULT_CONFIG.scrollDirection);
@@ -74,7 +74,7 @@ export class Config {
     updateSecondsPerPixel() {
         let secondsPerPixel: number = this.getSecondsPerPixel();
         if (secondsPerPixel != null && secondsPerPixel != NaN) {
-            this.secondsPerPixel = secondsPerPixel;
+            this.pixelsPerSecond = secondsPerPixel;
         }
     }
 
@@ -119,14 +119,14 @@ export class Config {
     }
 
     private setSecondsPerPixel() {
-        (<HTMLInputElement>document.getElementById("scroll-speed")).value = (1 / this.secondsPerPixel).toString();
+        (<HTMLInputElement>document.getElementById("scroll-speed")).value = (1 / this.pixelsPerSecond).toString();
     }
 
     private getReceptorYPosition(): number {
         let receptorPositionPercentage = parseFloat(
             (<HTMLInputElement>document.getElementById("receptor-position")).value
         ) / 100;
-        if (this.scrollDirection == ScrollDirection.UP) {
+        if (this.scrollDirection == ScrollDirection.Up) {
             return receptorPositionPercentage * this.gameAreaHeight;
         } else {
             return (1 - receptorPositionPercentage) * this.gameAreaHeight;
@@ -135,7 +135,7 @@ export class Config {
 
     private setReceptorYPosition() {
         let receptorPositionPercentage;
-        if (this.scrollDirection == ScrollDirection.UP) {
+        if (this.scrollDirection == ScrollDirection.Up) {
             receptorPositionPercentage = (this.receptorYPosition / this.gameAreaHeight) * 100;
         } else {
             receptorPositionPercentage = (1 - (this.receptorYPosition / this.gameAreaHeight)) * 100;
@@ -202,10 +202,10 @@ export class Config {
     }
 
     private getTimeFromReceptorToScreenEdge(): number {
-        if (this.scrollDirection == ScrollDirection.UP) {
-            return (this.gameAreaHeight - this.receptorYPosition) * this.secondsPerPixel;
+        if (this.scrollDirection == ScrollDirection.Up) {
+            return (this.gameAreaHeight - this.receptorYPosition) * this.pixelsPerSecond;
         } else {
-            return this.receptorYPosition * this.secondsPerPixel;
+            return this.receptorYPosition * this.pixelsPerSecond;
         }
     }
 

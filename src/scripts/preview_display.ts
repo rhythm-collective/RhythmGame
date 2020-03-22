@@ -19,8 +19,8 @@ export class PreviewDisplay {
         this.scene = scene;
         this.noteManager = new NoteManager(tracks);
         this.scrollManager = new ScrollManager(this.config);
-        this.displayManager = new DisplayManager(this.noteManager, this.scene.canvas, this.config, this.scene.sketchInstance);
-        this.scene.canvas.addEventListener("wheel", (e: WheelEvent) => this.scrollManager.canvasScrolled(e));
+        this.displayManager = new DisplayManager(this.noteManager, this.config, this.scene.sketchInstance);
+        // this.scene.canvas.addEventListener("wheel", (e: WheelEvent) => this.scrollManager.canvasScrolled(e));
         // this.scene = new P5Scene(this.config.gameAreaWidth, this.config.gameAreaHeight,
         //     (canvas: HTMLCanvasElement, p: p5) => {
         //     }, () => {
