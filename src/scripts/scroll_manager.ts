@@ -1,5 +1,5 @@
 import {TimeManager} from "./time_manager";
-import {Config} from "./config";
+import {Config} from "../scripts2/config";
 
 export class ScrollManager {
     private config: Config;

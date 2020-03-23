@@ -1,4 +1,4 @@
-import {Config} from "./config";
+import {Config} from "../scripts2/config";
 
 export class TimeManager {
     systemTimeWhenGameStarted: number;

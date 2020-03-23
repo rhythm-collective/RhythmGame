@@ -93,6 +93,19 @@ abstract class Scene2 {
     public static draw() {
         drawHeading();
 
+        let pauseAtStartInSecondsInput = createLabelledInput("Seconds to pause at start", "pauseAtStartInSecondsINput",
+            global.config.pauseAtStartInSeconds.toString(), 15, 400, 90);
+        // @ts-ignore
+        pauseAtStartInSecondsInput.input(() => {
+            let value: string | number = pauseAtStartInSecondsInput.value();
+            if (typeof value === "string") {
+                value = parseFloat(value);
+            }
+            if (!isNaN(value) && value > 0) {
+                global.config.pauseAtStartInSeconds = value;
+            }
+        });
+
         let scrollSpeedInput = createLabelledInput("Scroll Speed (px/sec)", "scrollSpeedInput",
             global.config.pixelsPerSecond.toString(), 15, 400, 120);
         // @ts-ignore
