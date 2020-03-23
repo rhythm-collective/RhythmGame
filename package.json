@@ -4,20 +4,23 @@
   "author": "Trumpet63",
   "license": "CC-BY-4.0",
   "description": "SM file parser",
-  "main": "dist/index.js",
+  "main": "dist/scripts2/index.js",
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Trumpet63-stream/SimParser.git"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "start:dev": "node_modules/.bin/webpack-dev-server"
   },
   "devDependencies": {
     "ts-loader": "^6.2.1",
     "typescript": "^3.7.5",
     "webpack": "^4.41.5",
-    "webpack-cli": "^3.3.10"
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.10.3",
+    "@types/p5": "^0.9.0"
   },
   "bugs": {
     "url": "https://github.com/Trumpet63-stream/SimParser/issues"
@@ -25,7 +28,7 @@
   "homepage": "https://github.com/Trumpet63-stream/SimParser#readme",
   "version": "1.0.0",
   "dependencies": {
-    "@types/p5": "^0.9.0"
+    "p5": "^1.0.0"
   },
   "keywords": []
 }
