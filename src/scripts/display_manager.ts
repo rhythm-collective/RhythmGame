@@ -6,66 +6,67 @@ import {ScrollDirection} from "./scroll_direction";
 import {Note, NoteState, NoteType} from "./parsing";
 
 class NoteDisplay {
-    x: number;
-    y: number;
+    centerX: number;
+    centerY: number;
     noteType: string;
     private sketchInstance: p5;
     noteSize: number;
 
-    constructor(x: number, y: number, noteType: string, sketchInstance: p5, noteSize: number) {
+    constructor(centerX: number, centerY: number, noteType: string, sketchInstance: p5, noteSize: number) {
         this.sketchInstance = sketchInstance;
-        this.x = x;
-        this.y = y;
+        this.centerX = centerX;
+        this.centerY = centerY;
         this.noteType = noteType;
         this.noteSize = noteSize;
     }
 
     draw() {
         let p = this.sketchInstance;
+        let width = 20;
+        let height = 20;
         p.push();
         p.fill("black");
         switch (this.noteType) {
             case NoteType.NORMAL:
-                p.rect(this.x, this.y, 20, 20);
-
+                p.rect(this.centerX - width / 2, this.centerY - height / 2, width, height);
                 break;
             case NoteType.HOLD_HEAD:
-                p.rect(this.x, this.y, 20, 20);
+                p.rect(this.centerX - width / 2, this.centerY - height / 2, width, height);
                 p.textSize(20);
                 p.textFont("Arial");
-                p.textAlign(p.CENTER);;
+                p.textAlign(p.CENTER);
                 p.fill("white");
-                p.text("v", this.x + 10, this.y + 16);
+                p.text("v", this.centerX, this.centerY + 6);
                 break;
             case NoteType.TAIL:
                 p.noFill();
-                p.rect(this.x, this.y, 20, 20);
+                p.rect(this.centerX - width / 2, this.centerY - height / 2, width, height);
                 break;
             case NoteType.ROLL_HEAD:
-                p.rect(this.x, this.y, 20, 20);
+                p.rect(this.centerX - width / 2, this.centerY - height / 2, width, height);
                 p.textSize(20);
                 p.textFont("Arial");
                 p.textAlign(p.CENTER);
                 p.fill("white");
-                p.text("x", this.x + 10, this.y + 16);
+                p.text("x", this.centerX, this.centerY + 6);
                 break;
             case NoteType.MINE:
                 p.fill("black");
-                p.circle(this.x + 10, this.y + 10, 24);
+                p.circle(this.centerX, this.centerY, 24);
                 p.textSize(20);
                 p.textFont("Arial");
                 p.textAlign(p.CENTER);
                 p.fill("white");
-                p.text("X", this.x + 10, this.y + 18);
+                p.text("X", this.centerX, this.centerY + 8);
                 break;
             default:
                 p.noFill();
-                p.rect(this.x, this.y, 20, 20);
+                p.rect(this.centerX - width / 2, this.centerY - height / 2, width, height);
                 p.fill("black");
                 p.textSize(20);
                 p.textFont("Arial");
                 p.textAlign(p.CENTER);
-                p.text("?", this.x + 10, this.y + 18);
+                p.text("?", this.centerX, this.centerY + 7);
                 break;
         }
         p.pop();
@@ -73,43 +74,46 @@ class NoteDisplay {
 }
 
 class HoldConnector {
-    x: number;
+    centerX: number;
     startY: number;
     endY: number;
     private sketchInstance: p5;
 
-    constructor(x: number, startY: number, endY: number, sketchInstance: p5) {
+    constructor(centerX: number, startY: number, endY: number, sketchInstance: p5) {
         this.sketchInstance = sketchInstance;
-        this.x = x;
+        this.centerX = centerX;
         this.startY = startY;
         this.endY = endY;
     }
 
     draw() {
         let p = this.sketchInstance;
+        let width = 10;
         p.push();
         p.fill("black");
-        p.rect(this.x + 5, this.startY, 10, this.endY - this.startY);
+        p.rect(this.centerX - width / 2, this.startY, width, this.endY - this.startY);
         p.pop();
     }
 }
 
 class Receptor {
-    x: number;
-    y: number;
+    centerX: number;
+    centerY: number;
     private sketchInstance: p5;
 
-    constructor(x: number, y: number, sketchInstance: p5) {
+    constructor(centerX: number, centerY: number, sketchInstance: p5) {
         this.sketchInstance = sketchInstance;
-        this.x = x;
-        this.y = y;
+        this.centerX = centerX;
+        this.centerY = centerY;
     }
 
     draw() {
         let p = this.sketchInstance;
+        let width = 20;
+        let height = 20;
         p.push();
         p.noFill();
-        p.rect(this.x, this.y, 20, 20);
+        p.rect(this.centerX - width / 2, this.centerY - height / 2, width, height);
         p.pop();
     }
 }
@@ -169,8 +173,8 @@ export class DisplayManager {
 
     private drawNote(note: Note, trackNumber: number, numTracks: number, currentTime: number) {
         if (note.state == NoteState.DEFAULT) {
-            let x = this.getNoteX(trackNumber, numTracks);
-            let y = this.getNoteY(note.timeInSeconds, currentTime);
+            let x = this.getNoteCenterX(trackNumber, numTracks);
+            let y = this.getNoteCenterY(note.timeInSeconds, currentTime);
             new NoteDisplay(x, y, note.type, this.sketchInstance, this.config.noteSize).draw();
         }
     }
@@ -195,12 +199,12 @@ export class DisplayManager {
         return currentTime + (receptorGap / this.config.pixelsPerSecond);
     }
 
-    private getNoteX(trackNumber: number, numTracks: number) {
-        let noteTrackSize = this.getCanvasWidth() / (numTracks + (numTracks + 1) / 2);
-        return (0.5 + trackNumber * 1.5) * noteTrackSize + this.topLeftX;
+    private getNoteCenterX(trackNumber: number, numTracks: number) {
+        let receptorSpacing = this.getCanvasWidth() / numTracks - this.config.noteSize;
+        return (2 * trackNumber + 1) / 2 * (this.config.noteSize + receptorSpacing) + this.topLeftX;
     }
 
-    private getNoteY(noteTime: number, currentTime: number) {
+    private getNoteCenterY(noteTime: number, currentTime: number) {
         let timeDistance = noteTime - currentTime;
         if (this.config.scrollDirection == ScrollDirection.Up) {
             return this.config.receptorYPosition + (this.config.pixelsPerSecond * timeDistance) + this.topLeftY;
@@ -270,23 +274,23 @@ export class DisplayManager {
     }
 
     private drawConnector(startNote: Note, endNote: Note, trackNumber: number, numTracks: number, currentTime: number) {
-        let x = this.getNoteX(trackNumber, numTracks);
+        let x = this.getNoteCenterX(trackNumber, numTracks);
 
         let startY;
         if (startNote.state == NoteState.HELD) {
-            startY = this.getNoteY(Math.min(currentTime, endNote.timeInSeconds), currentTime);
+            startY = this.getNoteCenterY(Math.min(currentTime, endNote.timeInSeconds), currentTime);
         } else {
-            startY = this.getNoteY(startNote.timeInSeconds, currentTime);
+            startY = this.getNoteCenterY(startNote.timeInSeconds, currentTime);
         }
 
-        let endY = this.getNoteY(endNote.timeInSeconds - (this.config.noteSize / this.config.pixelsPerSecond), currentTime);
+        let endY = this.getNoteCenterY(endNote.timeInSeconds - (this.config.noteSize / this.config.pixelsPerSecond / 2), currentTime);
         new HoldConnector(x, startY, endY, this.sketchInstance).draw();
     }
 
     private drawReceptors() {
         let numTracks = this.noteManager.tracks.length;
         for (let i = 0; i < numTracks; i++) {
-            new Receptor(this.getNoteX(i, numTracks), this.getNoteY(this.currentTimeInSeconds, this.currentTimeInSeconds),
+            new Receptor(this.getNoteCenterX(i, numTracks), this.getNoteCenterY(this.currentTimeInSeconds, this.currentTimeInSeconds),
                 this.sketchInstance).draw();
         }
     }

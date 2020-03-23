@@ -93,7 +93,7 @@ abstract class Scene2 {
     public static draw() {
         drawHeading();
 
-        let pauseAtStartInSecondsInput = createLabelledInput("Seconds to pause at start", "pauseAtStartInSecondsINput",
+        let pauseAtStartInSecondsInput = createLabelledInput("Pause at Start (sec)", "pauseAtStartInSecondsInput",
             global.config.pauseAtStartInSeconds.toString(), 15, 400, 90);
         // @ts-ignore
         pauseAtStartInSecondsInput.input(() => {
@@ -101,7 +101,7 @@ abstract class Scene2 {
             if (typeof value === "string") {
                 value = parseFloat(value);
             }
-            if (!isNaN(value) && value > 0) {
+            if (!isNaN(value) && value >= 0) {
                 global.config.pauseAtStartInSeconds = value;
             }
         });
@@ -138,8 +138,21 @@ abstract class Scene2 {
             if (typeof value === "string") {
                 value = parseFloat(value);
             }
-            if (!isNaN(value) && value > 0) {
+            if (!isNaN(value)) {
                 global.config.receptorYPosition = value;
+            }
+        });
+
+        let additionalOffsetInSecondsInput = createLabelledInput("Accuracy Offset (sec)", "additionalOffsetInSecondsInput",
+            global.config.additionalOffsetInSeconds.toString(), 15, 400, 210);
+        // @ts-ignore
+        additionalOffsetInSecondsInput.input(() => {
+            let value: string | number = additionalOffsetInSecondsInput.value();
+            if (typeof value === "string") {
+                value = parseFloat(value);
+            }
+            if (!isNaN(value) && value > 0) {
+                global.config.additionalOffsetInSeconds = value;
             }
         });
 
@@ -273,7 +286,11 @@ const global: any = {};
 global.p5Scene = new P5Scene();
 global.config = new Config({});
 global.previewNotes = [
-    [{type: NoteType.NORMAL, timeInSeconds: 0.1, state: NoteState.DEFAULT}],
+    [{type: NoteType.NORMAL, timeInSeconds: 0.1, state: NoteState.DEFAULT}, {
+        type: NoteType.NONE,
+        timeInSeconds: 0.35,
+        state: NoteState.DEFAULT
+    }],
     [{type: NoteType.HOLD_HEAD, timeInSeconds: 0.2, state: NoteState.DEFAULT}, {
         type: NoteType.TAIL,
         timeInSeconds: 0.5,
