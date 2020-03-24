@@ -7,7 +7,7 @@ import {DEFAULT_CONFIG} from "../scripts/default_config";
 // Essential config: scroll speed, scroll direction, game width/height, additional offset, pause at start
 export class Config {
     pixelsPerSecond: number;
-    receptorYPosition: number;
+    receptorYPercent: number;
     scrollDirection: ScrollDirection;
     additionalOffsetInSeconds: number;
     accuracySettings: Accuracy[];
@@ -19,7 +19,7 @@ export class Config {
 
     constructor(args: {
                     pixelsPerSecond?: number,
-                    receptorYPosition?: number,
+                    receptorYPercent?: number,
                     scrollDirection?: ScrollDirection,
                     additionalOffsetInSeconds?: number,
                     accuracySettings?: Accuracy[],
@@ -40,7 +40,7 @@ export class Config {
         // this.setScrollDirection();
 
         // NOTE: Scroll direction and gameAreaHeight must be set BEFORE setting receptorYPosition
-        this.receptorYPosition = defaultIfUndefined(args.receptorYPosition, DEFAULT_CONFIG.receptorYPosition);
+        this.receptorYPercent = defaultIfUndefined(args.receptorYPercent, DEFAULT_CONFIG.receptorYPercent);
         // this.setReceptorYPosition();
 
         this.additionalOffsetInSeconds = defaultIfUndefined(args.additionalOffsetInSeconds, DEFAULT_CONFIG.additionalOffsetInSeconds);

@@ -5,7 +5,7 @@ import {ScrollDirection} from "./scroll_direction";
 export let DEFAULT_CONFIG = {
     pixelsPerSecond: 650,
     scrollDirection: ScrollDirection.Down,
-    receptorYPosition: 400,
+    receptorYPercent: 10,
     additionalOffsetInSeconds: 0,
     // This is a symmetrical version of FFR's accuracy
     // TODO: Add a list of presets that live in their own file

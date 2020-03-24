@@ -1,7 +1,7 @@
 import * as p5 from "p5";
 import {Config} from "../scripts2/config";
 import {PreviewDisplay} from "../scripts/preview_display";
-import {Note, NoteState, NoteType} from "../scripts/parsing";
+import {NoteState, NoteType} from "../scripts/parsing";
 import {KeyboardEventManager} from "./keyboard_event_manager";
 import {ScrollDirection} from "../scripts/scroll_direction";
 
@@ -130,8 +130,8 @@ abstract class Scene2 {
             }
         });
 
-        let receptorPositionInput = createLabelledInput("Receptor Position (px)", "receptorPositionInput",
-            global.config.receptorYPosition.toString(), 15, 400, 180);
+        let receptorPositionInput = createLabelledInput("Receptor Position (%)", "receptorPositionInput",
+            global.config.receptorYPercent.toString(), 15, 400, 180);
         // @ts-ignore
         receptorPositionInput.input(() => {
             let value: string | number = receptorPositionInput.value();
@@ -139,7 +139,7 @@ abstract class Scene2 {
                 value = parseFloat(value);
             }
             if (!isNaN(value)) {
-                global.config.receptorYPosition = value;
+                global.config.receptorYPercent = value;
             }
         });
 

@@ -180,44 +180,36 @@ export class DisplayManager {
     }
 
     private getLeastTime(currentTime: number) {
-        let receptorGap: number; // the gap in the LATE direction
-        if (this.config.scrollDirection == ScrollDirection.Up) {
-            receptorGap = this.config.receptorYPosition;
-        } else {
-            receptorGap = this.getCanvasHeight() - this.config.receptorYPosition;
-        }
-        return currentTime - (receptorGap / this.config.pixelsPerSecond);
+        let totalDisplaySeconds = this.getDisplayHeight() / this.config.pixelsPerSecond;
+        return currentTime - this.config.receptorYPercent / 100 * totalDisplaySeconds;
     }
 
     private getGreatestTime(currentTime: number) {
-        let receptorGap: number; // the gap in the EARLY direction
-        if (this.config.scrollDirection == ScrollDirection.Up) {
-            receptorGap = this.getCanvasHeight() - this.config.receptorYPosition;
-        } else {
-            receptorGap = this.config.receptorYPosition;
-        }
-        return currentTime + (receptorGap / this.config.pixelsPerSecond);
+        let totalDisplaySeconds = this.getDisplayHeight() / this.config.pixelsPerSecond;
+        return currentTime + (1 - this.config.receptorYPercent / 100) * totalDisplaySeconds;
     }
 
     private getNoteCenterX(trackNumber: number, numTracks: number) {
-        let receptorSpacing = this.getCanvasWidth() / numTracks - this.config.noteSize;
+        let receptorSpacing = this.getDisplayWidth() / numTracks - this.config.noteSize;
         return (2 * trackNumber + 1) / 2 * (this.config.noteSize + receptorSpacing) + this.topLeftX;
     }
 
+    // This essentially defines a conversion from seconds to pixels
     private getNoteCenterY(noteTime: number, currentTime: number) {
-        let timeDistance = noteTime - currentTime;
+        let noteYOffset = this.config.pixelsPerSecond * (noteTime - currentTime);
+        let receptorYOffset = this.config.receptorYPercent / 100 * this.getDisplayHeight();
         if (this.config.scrollDirection == ScrollDirection.Up) {
-            return this.config.receptorYPosition + (this.config.pixelsPerSecond * timeDistance) + this.topLeftY;
+            return receptorYOffset + noteYOffset + this.topLeftY;
         } else {
-            return this.config.receptorYPosition - (this.config.pixelsPerSecond * timeDistance) + this.topLeftY;
+            return this.getDisplayHeight() - (receptorYOffset + noteYOffset) + this.topLeftY;
         }
     }
 
-    private getCanvasWidth(): number {
+    private getDisplayWidth(): number {
         return this.width;
     }
 
-    private getCanvasHeight(): number {
+    private getDisplayHeight(): number {
         return this.height;
     }
 
