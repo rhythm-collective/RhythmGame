@@ -49,3 +49,4 @@ export function getMissBoundary(currentTime: number, config: Config) {
     let missBoundary = currentTime + (config.accuracySettings[0].upperBound / 1000); //result is in seconds
     return missBoundary;
 }
+

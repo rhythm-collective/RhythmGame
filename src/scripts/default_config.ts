@@ -22,7 +22,7 @@ export let DEFAULT_CONFIG = {
         new Accuracy("Boo", 117, null)
     ],
     pauseAtStartInSeconds: 0,
-    keyBindings: new BiDirectionalMap<string, number>({"E": 0, "F": 1, "K": 2, "O": 3}),
+    keyBindings: new Map(),
     gameAreaHeight: 600,
     gameAreaWidth: 400,
     noteSize: 20

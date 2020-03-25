@@ -156,6 +156,11 @@ abstract class Scene2 {
             }
         });
 
+        let keyBinding0 = createKeyBindingInput(0, "track0Binding",15, 400, 240);
+        let keyBinding1 = createKeyBindingInput(1, "track1Binding",15, 400, 270);
+        let keyBinding2 = createKeyBindingInput(2, "track2Binding",15, 400, 300);
+        let keyBinding3 = createKeyBindingInput(3, "track3Binding",15, 400, 330);
+
         global.previewDisplay.draw();
     }
 }
@@ -170,9 +175,6 @@ function createLabelledInput(labelString: string, uniqueId: string, initialValue
                              labelX: number, labelY: number) {
     let p: p5 = global.p5Scene.sketchInstance;
     p.push();
-    let inputFontSize = labelFontSize * 0.9;
-    let inputRelativeLength = 8.0;
-    let relativeSpacing = 1.0;
     p.textSize(labelFontSize);
     p.text(labelString, labelX, labelY);
     // @ts-ignore
@@ -180,6 +182,10 @@ function createLabelledInput(labelString: string, uniqueId: string, initialValue
     let input = DOMWrapper.create(() => {
         return p.createInput(initialValue);
     }, uniqueId).element;
+
+    let inputFontSize = labelFontSize * 0.9;
+    let inputRelativeLength = 8.0;
+    let relativeSpacing = 1.0;
     input.style("font-size", inputFontSize + "px");
     input.size(inputRelativeLength * inputFontSize);
     let inputSize: { width?: number, height?: number } = input.size();
@@ -194,9 +200,6 @@ function createLabelledSelect(labelString: string, uniqueId: string, optionsEnum
                               labelFontSize: number, labelX: number, labelY: number) {
     let p: p5 = global.p5Scene.sketchInstance;
     p.push();
-    let inputFontSize = labelFontSize * 0.9;
-    let inputRelativeLength = 8.0;
-    let relativeSpacing = 1.0;
     p.textSize(labelFontSize);
     p.text(labelString, labelX, labelY);
     // @ts-ignore
@@ -214,6 +217,10 @@ function createLabelledSelect(labelString: string, uniqueId: string, optionsEnum
         // @ts-ignore
         select.selected(ScrollDirection[initialEnumValue as keyof typeof ScrollDirection].toString());
     }
+
+    let inputFontSize = labelFontSize * 0.9;
+    let inputRelativeLength = 8.0;
+    let relativeSpacing = 1.0;
     select.style("font-size", inputFontSize + "px");
     select.size(inputRelativeLength * inputFontSize);
     let inputSize: { width?: number, height?: number } = select.size();
@@ -221,6 +228,46 @@ function createLabelledSelect(labelString: string, uniqueId: string, optionsEnum
         canvasPosition.y + labelY - (inputSize.height / 2) - (p.textAscent() * 0.35));
     p.pop();
     return select;
+}
+
+function createKeyBindingInput(trackNumber: number, uniqueId: string, labelFontSize: number, labelX: number, labelY: number) {
+    let p: p5 = global.p5Scene.sketchInstance;
+    p.push();
+    p.textSize(labelFontSize);
+    let labelString = "Track " + (trackNumber + 1);
+    if (trackNumber == 0) {
+        labelString += " (Leftmost)";
+    }
+    labelString += ":";
+    p.text(labelString, labelX, labelY);
+
+    let keyString = "LShift";
+    let labelToKeyRelativeSpacing = 1.0;
+    let keyStringX = labelX + p.textWidth(labelString) + labelToKeyRelativeSpacing * labelFontSize;
+    p.text(keyString, keyStringX, labelY);
+
+    // @ts-ignore
+    let canvasPosition: { x: number, y: number } = p._renderer.position();
+    let button = DOMWrapper.create(() => {
+        return p.createButton("Set");
+    }, uniqueId + "Button").element;
+
+    button.mousePressed(() => {
+        console.log("Hello World!");
+    });
+
+    let inputFontSize = labelFontSize * 0.9;
+    let inputRelativeLength = 3.3;
+    let relativeSpacing = 1.0;
+    button.style("font-size", inputFontSize + "px");
+    button.size(inputRelativeLength * inputFontSize);
+    let inputSize: { width?: number, height?: number } = button.size();
+    let minimumKeyStringSpace = p.textWidth("LShift");
+    let inputX = canvasPosition.x + keyStringX + Math.max(minimumKeyStringSpace, p.textWidth(keyString)) + relativeSpacing * labelFontSize;
+    let inputY = canvasPosition.y + labelY - (inputSize.height / 2) - (p.textAscent() * 0.35);
+    button.position(inputX, inputY);
+    p.pop();
+    return button;
 }
 
 function drawHeading() {

@@ -12,7 +12,7 @@ export class Config {
     additionalOffsetInSeconds: number;
     accuracySettings: Accuracy[];
     pauseAtStartInSeconds: number;
-    keyBindings: BiDirectionalMap<string, number> = new BiDirectionalMap<string, number>();
+    keyBindings: Map<number, BiDirectionalMap<number, number>>;
     gameAreaHeight: number;
     gameAreaWidth: number;
     noteSize: number;
