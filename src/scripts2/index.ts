@@ -4,6 +4,8 @@ import {PreviewDisplay} from "../scripts/preview_display";
 import {NoteState, NoteType} from "../scripts/parsing";
 import {KeyboardEventManager} from "./keyboard_event_manager";
 import {ScrollDirection} from "../scripts/scroll_direction";
+import {Keybinding, Keybindings, KeybindingFunction, SaveOnFinishFunction} from "./keybind_utility"
+import * as KeybindingHelper from "./keybinding_helper";
 
 let width = 720;
 let height = 480;
@@ -71,6 +73,21 @@ class P5Scene {
             p.windowResized = function () {
                 centerCanvas();
             };
+
+            p.keyTyped = function () {
+                if (KeybindingHelper.ActiveKeybindingIterator != null) {
+                    var bind: KeybindingFunction = (currentBinding: number) => {
+                        var keybinding: Keybinding = { key: p.keyCode, binding: currentBinding };
+                        return keybinding;
+                    };
+
+                    var writeOut: SaveOnFinishFunction = (bindings: Keybindings) => {
+                        p.print(bindings);
+                    };
+
+                    KeybindingHelper.ActiveKeybindingIterator(bind, writeOut);
+                }
+            }
         });
     }
 }
@@ -161,6 +178,7 @@ abstract class Scene2 {
         let keyBinding2 = createKeyBindingInput(2, "track2Binding",15, 400, 300);
         let keyBinding3 = createKeyBindingInput(3, "track3Binding",15, 400, 330);
 
+        DrawQuickStartKeybindingsButton();
         global.previewDisplay.draw();
     }
 }
@@ -350,3 +368,15 @@ global.previewNotes = [
         state: NoteState.DEFAULT
     }]
 ];
+
+function DrawQuickStartKeybindingsButton()
+{
+    let p: p5 = global.p5Scene.sketchInstance;
+    let button = DOMWrapper.create(() => {
+        return p.createButton("KeyBindings Quickstart");
+    }, "button").element;
+    setCenterPositionRelative(button, 0.5, 0.5);
+    button.mousePressed(() => {
+        KeybindingHelper.StartRebindingSequence(4);
+    });
+}

@@ -4,7 +4,7 @@ import {DisplayManager} from "./display_manager";
 import {NoteManager} from "./note_manager";
 import {P5Scene} from "./p5_scene";
 import {ScrollManager} from "./scroll_manager";
-import {Config} from "../scripts2/config";
+import {Config} from "../scripts/config";
 import {Note} from "./parsing";
 
 export class PreviewDisplay {
